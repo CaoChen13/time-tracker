@@ -5,11 +5,17 @@ import '../data/time_record_provider.dart';
 import '../../category/data/category_provider.dart';
 import '../../../core/database/database.dart';
 
-class RecordList extends ConsumerWidget {
+class RecordList extends ConsumerStatefulWidget {
   const RecordList({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<RecordList> createState() => _RecordListState();
+}
+
+class _RecordListState extends ConsumerState<RecordList>
+    with TickerProviderStateMixin {
+  @override
+  Widget build(BuildContext context) {
     final recordsAsync = ref.watch(recordsByDateProvider);
     final categoriesAsync = ref.watch(categoriesProvider);
 
@@ -18,27 +24,44 @@ class RecordList extends ConsumerWidget {
         final completedRecords =
             records.where((r) => r.endTime != null).toList();
 
-        if (completedRecords.isEmpty) {
-          return const _EmptyState();
-        }
-
-        return categoriesAsync.when(
-          data: (categories) {
-            final categoryMap = {for (var c in categories) c.id: c};
-            return ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              itemCount: completedRecords.length,
-              itemBuilder: (context, index) {
-                final record = completedRecords[index];
-                final category = record.categoryId != null
-                    ? categoryMap[record.categoryId]
-                    : null;
-                return _RecordCard(record: record, category: category);
-              },
-            );
-          },
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Center(child: Text('加载失败: $e')),
+        return AnimatedSize(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeInOut,
+          alignment: Alignment.topCenter,
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 250),
+            switchInCurve: Curves.easeOutCubic,
+            switchOutCurve: Curves.easeInCubic,
+            child: completedRecords.isEmpty
+                ? const _EmptyState(key: ValueKey('empty'))
+                : categoriesAsync.when(
+                    data: (categories) {
+                      final categoryMap = {for (var c in categories) c.id: c};
+                      return ListView.separated(
+                        key: const ValueKey('list'),
+                        padding:
+                            const EdgeInsets.fromLTRB(20, 12, 20, 20),
+                        physics: const BouncingScrollPhysics(),
+                        itemCount: completedRecords.length,
+                        separatorBuilder: (_, __) =>
+                            const SizedBox(height: 12),
+                        itemBuilder: (context, index) {
+                          final record = completedRecords[index];
+                          final category = record.categoryId != null
+                              ? categoryMap[record.categoryId]
+                              : null;
+                          return _RecordCard(
+                            record: record,
+                            category: category,
+                          );
+                        },
+                      );
+                    },
+                    loading: () =>
+                        const Center(child: CircularProgressIndicator()),
+                    error: (e, _) => Center(child: Text('加载失败: $e')),
+                  ),
+          ),
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -48,7 +71,7 @@ class RecordList extends ConsumerWidget {
 }
 
 class _EmptyState extends StatelessWidget {
-  const _EmptyState();
+  const _EmptyState({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -99,7 +122,6 @@ class _RecordCard extends ConsumerWidget {
     return GestureDetector(
       onLongPress: () => _showDeleteDialog(context, ref),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
           color: theme.cardTheme.color,
           borderRadius: BorderRadius.circular(16),
