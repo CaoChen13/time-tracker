@@ -16,6 +16,8 @@ class TimerCard extends ConsumerStatefulWidget {
 class _TimerCardState extends ConsumerState<TimerCard> {
   Timer? _timer;
   Duration _elapsed = Duration.zero;
+  int? _activeRecordId;
+  DateTime? _activeStartTime;
 
   @override
   void dispose() {
@@ -31,7 +33,7 @@ class _TimerCardState extends ConsumerState<TimerCard> {
       data: (activeRecord) {
         Widget child;
         if (activeRecord != null) {
-          _startTimer(activeRecord.startTime);
+          _startTimerIfNeeded(activeRecord);
           child = _ActiveTimerCard(
             key: const ValueKey('active'),
             record: activeRecord,
@@ -39,7 +41,7 @@ class _TimerCardState extends ConsumerState<TimerCard> {
             onStop: _stopTimer,
           );
         } else {
-          _timer?.cancel();
+          _resetTimerState();
           child = const _IdleTimerCard(key: ValueKey('idle'));
         }
         // 卡片切换过渡动画
@@ -67,21 +69,43 @@ class _TimerCardState extends ConsumerState<TimerCard> {
     );
   }
 
-  void _startTimer(DateTime startTime) {
+  void _startTimerIfNeeded(TimeRecord record) {
+    if (_activeRecordId == record.id &&
+        _activeStartTime == record.startTime) {
+      return;
+    }
+
+    _activeRecordId = record.id;
+    _activeStartTime = record.startTime;
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) {
         setState(() {
-          _elapsed = DateTime.now().difference(startTime);
+          _elapsed = DateTime.now().difference(record.startTime);
         });
       }
     });
-    _elapsed = DateTime.now().difference(startTime);
+
+    setState(() {
+      _elapsed = DateTime.now().difference(record.startTime);
+    });
   }
 
   void _stopTimer() {
     ref.read(timeRecordServiceProvider).stopTimer();
     _timer?.cancel();
+    _resetTimerState();
+  }
+
+  void _resetTimerState() {
+    if (_activeRecordId == null) return;
+
+    _timer?.cancel();
+    setState(() {
+      _activeRecordId = null;
+      _activeStartTime = null;
+      _elapsed = Duration.zero;
+    });
   }
 }
 
