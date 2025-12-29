@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../data/time_record_provider.dart';
 import '../../category/data/category_provider.dart';
 import '../../../core/database/database.dart';
+import '../../../core/widgets/icon_picker.dart';
 
 class RecordList extends ConsumerStatefulWidget {
   const RecordList({super.key});
@@ -40,11 +43,11 @@ class _RecordListState extends ConsumerState<RecordList>
                       return ListView.separated(
                         key: const ValueKey('list'),
                         padding:
-                            const EdgeInsets.fromLTRB(20, 12, 20, 20),
+                            const EdgeInsets.fromLTRB(16, 8, 16, 20),
                         physics: const BouncingScrollPhysics(),
                         itemCount: completedRecords.length,
                         separatorBuilder: (_, __) =>
-                            const SizedBox(height: 12),
+                            const SizedBox(height: 16),
                         itemBuilder: (context, index) {
                           final record = completedRecords[index];
                           final category = record.categoryId != null
@@ -104,7 +107,7 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-// 记录卡片 - 长按删除
+// TimePad 风格任务卡片
 class _RecordCard extends ConsumerWidget {
   final TimeRecord record;
   final Category? category;
@@ -113,117 +116,167 @@ class _RecordCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final timeFormat = DateFormat('HH:mm');
     final duration = record.endTime!.difference(record.startTime);
     final categoryColor =
-        category != null ? _parseColor(category!.color) : Colors.grey;
+        category != null ? _parseColor(category!.color) : const Color(0xFF8B5CF6);
+    final textTheme = Theme.of(context).textTheme;
+    
+    // 监听当前计时中的任务
+    final activeRecordAsync = ref.watch(activeRecordProvider);
+    final activeRecord = activeRecordAsync.valueOrNull;
+    // 判断当前这个卡片对应的事件是否正在计时（通过名称和分类匹配）
+    final isThisRunning = activeRecord != null &&
+        activeRecord.name == record.name &&
+        activeRecord.categoryId == record.categoryId;
 
-    return GestureDetector(
-      onLongPress: () => _showDeleteDialog(context, ref),
+    return Slidable(
+      key: ValueKey(record.id),
+      endActionPane: ActionPane(
+        motion: const BehindMotion(),
+        extentRatio: 0.25,
+        children: [
+          SlidableAction(
+            onPressed: (context) => _deleteRecord(context, ref),
+            backgroundColor: const Color(0xFFFF6B6B),
+            foregroundColor: Colors.white,
+            icon: Icons.delete_outline,
+            label: '删除',
+          ),
+        ],
+      ),
       child: Container(
+        height: 84,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
-          color: theme.cardTheme.color,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.03),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
         ),
-        child: IntrinsicHeight(
-          child: Row(
-            children: [
-              // 左侧彩色条
-              Container(
-                width: 4,
-                decoration: BoxDecoration(
-                  color: categoryColor,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(16),
-                    bottomLeft: Radius.circular(16),
-                  ),
-                ),
+        child: Row(
+          children: [
+            // 左侧圆形图标
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: categoryColor,
+                shape: BoxShape.circle,
               ),
-              // 内容区
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
+              child: Icon(
+                category?.icon != null
+                    ? getIconByName(category!.icon)
+                    : Icons.access_time_outlined,
+                size: 22,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(width: 12),
+            // 中间+右侧内容
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // 第一行：任务名 + 时间
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              record.name,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            Row(
-                              children: [
-                                if (category != null) ...[
-                                  Icon(
-                                    Icons.label_outline,
-                                    size: 14,
-                                    color: categoryColor,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    category!.name,
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: categoryColor,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    '•',
-                                    style: TextStyle(
-                                      color: theme.colorScheme.outline,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                ],
-                                Text(
-                                  '${timeFormat.format(record.startTime)} - ${timeFormat.format(record.endTime!)}',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: theme.colorScheme.outline,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
+                        child: Text(
+                          record.name,
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: const Color(0xFF000000),
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      // 时长
                       Text(
                         _formatDuration(duration),
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: theme.colorScheme.primary,
-                          fontFeatures: const [FontFeature.tabularFigures()],
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w400,
+                          color: const Color(0xFF4F4F4F),
                         ),
                       ),
                     ],
                   ),
-                ),
+                  const SizedBox(height: 8),
+                  // 第二行：标签 + 播放/暂停按钮
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // 标签：Personal（灰色）+ 分类（彩色）
+                      Expanded(
+                        child: Row(
+                          children: [
+                            // Personal 标签（灰色）
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF2F2F2),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                'Personal',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w400,
+                                  color: const Color(0xFF828282),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            // 分类标签（彩色）
+                            if (category != null)
+                              _TagChip(
+                                text: category!.name,
+                                color: categoryColor,
+                              ),
+                          ],
+                        ),
+                      ),
+                      // 播放/暂停按钮
+                      GestureDetector(
+                        onTap: () {
+                          if (isThisRunning) {
+                            // 当前这个事件正在计时，停止它
+                            ref.read(timeRecordServiceProvider).stopTimer();
+                          } else if (activeRecord != null) {
+                            // 有其他事件在计时，先停止再开始这个
+                            ref.read(timeRecordServiceProvider).stopTimer();
+                            ref.read(timeRecordServiceProvider).startTimer(
+                                  name: record.name,
+                                  categoryId: record.categoryId,
+                                );
+                          } else {
+                            // 没有计时中的任务，开始这个事件的计时
+                            ref.read(timeRecordServiceProvider).startTimer(
+                                  name: record.name,
+                                  categoryId: record.categoryId,
+                                );
+                          }
+                        },
+                        child: Icon(
+                          isThisRunning ? Icons.pause : Icons.play_arrow_outlined,
+                          size: 24,
+                          color: isThisRunning 
+                              ? const Color(0xFF8B5CF6) 
+                              : const Color(0xFF828282),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  void _showDeleteDialog(BuildContext context, WidgetRef ref) {
+  void _deleteRecord(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -240,7 +293,7 @@ class _RecordCard extends ConsumerWidget {
               Navigator.pop(context);
             },
             style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: const Color(0xFFFF6B6B),
             ),
             child: const Text('删除'),
           ),
@@ -253,7 +306,7 @@ class _RecordCard extends ConsumerWidget {
     try {
       return Color(int.parse(hex.replaceFirst('#', '0xFF')));
     } catch (_) {
-      return Colors.grey;
+      return const Color(0xFF8B5CF6);
     }
   }
 
@@ -262,5 +315,32 @@ class _RecordCard extends ConsumerWidget {
     final minutes = (d.inMinutes % 60).toString().padLeft(2, '0');
     final seconds = (d.inSeconds % 60).toString().padLeft(2, '0');
     return '$hours:$minutes:$seconds';
+  }
+}
+
+// 标签组件
+class _TagChip extends StatelessWidget {
+  final String text;
+  final Color color;
+
+  const _TagChip({required this.text, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        text,
+        style: GoogleFonts.poppins(
+          fontSize: 12,
+          fontWeight: FontWeight.w400,
+          color: color,
+        ),
+      ),
+    );
   }
 }

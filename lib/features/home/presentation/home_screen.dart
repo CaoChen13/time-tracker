@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../time_record/presentation/record_tab.dart';
+import '../../time_record/presentation/add_record_sheet.dart';
 import '../../category/presentation/category_list_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -20,50 +21,15 @@ class _HomeScreenState extends State<HomeScreen> {
         children: const [
           RecordTab(),
           _StatisticsTab(),
-          _GoalsTab(),
-          _SettingsTab(),
         ],
       ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, -2),
-            ),
-          ],
-        ),
-        child: NavigationBar(
-          selectedIndex: _currentIndex,
-          onDestinationSelected: (index) {
-            setState(() {
-              _currentIndex = index;
-            });
-          },
-          destinations: const [
-            NavigationDestination(
-              icon: Icon(Icons.access_time_outlined),
-              selectedIcon: Icon(Icons.access_time_filled),
-              label: '记录',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.pie_chart_outline),
-              selectedIcon: Icon(Icons.pie_chart),
-              label: '统计',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.track_changes_outlined),
-              selectedIcon: Icon(Icons.track_changes),
-              label: '目标',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.settings_outlined),
-              selectedIcon: Icon(Icons.settings),
-              label: '设置',
-            ),
-          ],
-        ),
+      bottomNavigationBar: _TimePadBottomBar(
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
       ),
     );
   }
@@ -245,6 +211,82 @@ class _SettingsTile extends StatelessWidget {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
         ),
+      ),
+    );
+  }
+}
+
+// TimePad 风格底部导航栏
+class _TimePadBottomBar extends StatelessWidget {
+  final int currentIndex;
+  final Function(int) onTap;
+
+  const _TimePadBottomBar({
+    required this.currentIndex,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 76,
+      padding: const EdgeInsets.symmetric(horizontal: 40),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // 左侧：时钟图标
+          GestureDetector(
+            onTap: () => onTap(0),
+            child: Opacity(
+              opacity: currentIndex == 0 ? 1.0 : 0.4,
+              child: const Icon(
+                Icons.access_time_outlined,
+                size: 28,
+                color: Color(0xFF000000),
+              ),
+            ),
+          ),
+          // 中间：添加按钮
+          GestureDetector(
+            onTap: () {
+              // 弹出添加记录
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (context) => const AddRecordSheet(),
+              );
+            },
+            child: Container(
+              width: 44,
+              height: 44,
+              decoration: const BoxDecoration(
+                color: Color(0xFF070417),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.add,
+                size: 24,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          // 右侧：历史图标（空心时钟）
+          GestureDetector(
+            onTap: () => onTap(1),
+            child: Opacity(
+              opacity: currentIndex == 1 ? 1.0 : 0.4,
+              child: const Icon(
+                Icons.access_time_outlined,
+                size: 28,
+                color: Color(0xFF000000),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

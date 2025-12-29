@@ -109,7 +109,7 @@ class _TimerCardState extends ConsumerState<TimerCard> {
   }
 }
 
-// 空闲状态
+// 空闲状态 - TimePad 风格
 class _IdleTimerCard extends ConsumerStatefulWidget {
   const _IdleTimerCard({super.key});
 
@@ -129,46 +129,42 @@ class _IdleTimerCardState extends ConsumerState<_IdleTimerCard> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final categoriesAsync = ref.watch(categoriesProvider);
+    final textTheme = Theme.of(context).textTheme;
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
+      height: 114,
+      margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: theme.cardTheme.color,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-        border: Border.all(
-          color: theme.colorScheme.outlineVariant.withOpacity(0.5),
-        ),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // 输入框
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            decoration: BoxDecoration(
-              color: theme.scaffoldBackgroundColor,
-              borderRadius: BorderRadius.circular(16),
-            ),
+          Expanded(
             child: TextField(
               controller: _nameController,
+              style: textTheme.bodyLarge?.copyWith(
+                fontSize: 16,
+                fontWeight: FontWeight.w400,
+                color: const Color(0xFF000000),
+              ),
               decoration: InputDecoration(
                 hintText: '在做什么？',
-                hintStyle: TextStyle(color: theme.colorScheme.outline),
+                hintStyle: textTheme.bodyLarge?.copyWith(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                  color: const Color(0xFF828282),
+                ),
                 border: InputBorder.none,
+                contentPadding: EdgeInsets.zero,
               ),
               onSubmitted: (_) => _startTimer(),
             ),
           ),
-          const SizedBox(height: 16),
           // 分类选择 + 开始按钮
           Row(
             children: [
@@ -178,19 +174,55 @@ class _IdleTimerCardState extends ConsumerState<_IdleTimerCard> {
                     scrollDirection: Axis.horizontal,
                     child: Row(
                       children: [
-                        ...categories.take(3).map((c) => Padding(
-                              padding: const EdgeInsets.only(right: 8),
-                              child: _CategoryChip(
-                                category: c,
-                                isSelected: _selectedCategoryId == c.id,
-                                onTap: () {
-                                  setState(() {
-                                    _selectedCategoryId =
-                                        _selectedCategoryId == c.id ? null : c.id;
-                                  });
-                                },
+                        ...categories.take(3).map((c) {
+                          final color = _parseColor(c.color);
+                          final isSelected = _selectedCategoryId == c.id;
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _selectedCategoryId =
+                                      _selectedCategoryId == c.id ? null : c.id;
+                                });
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 5),
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? color.withOpacity(0.15)
+                                      : const Color(0xFFF2F2F2),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Container(
+                                      width: 8,
+                                      height: 8,
+                                      decoration: BoxDecoration(
+                                        color: color,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      c.name,
+                                      style: textTheme.bodySmall?.copyWith(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w400,
+                                        color: isSelected
+                                            ? color
+                                            : const Color(0xFF828282),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            )),
+                            ),
+                          );
+                        }),
                         // 添加分类按钮
                         GestureDetector(
                           onTap: () {
@@ -202,15 +234,16 @@ class _IdleTimerCardState extends ConsumerState<_IdleTimerCard> {
                             );
                           },
                           child: Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              color: theme.scaffoldBackgroundColor,
+                            width: 24,
+                            height: 24,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFFF2F2F2),
                               shape: BoxShape.circle,
                             ),
-                            child: Icon(
+                            child: const Icon(
                               Icons.add,
                               size: 14,
-                              color: theme.colorScheme.outline,
+                              color: Color(0xFF828282),
                             ),
                           ),
                         ),
@@ -226,95 +259,22 @@ class _IdleTimerCardState extends ConsumerState<_IdleTimerCard> {
               GestureDetector(
                 onTap: _startTimer,
                 child: Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primary,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: theme.colorScheme.primary.withOpacity(0.3),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
+                  width: 44,
+                  height: 44,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF8B5CF6),
+                    borderRadius: BorderRadius.all(Radius.circular(12)),
                   ),
                   child: const Icon(
                     Icons.play_arrow_rounded,
                     color: Colors.white,
-                    size: 28,
+                    size: 24,
                   ),
                 ),
               ),
             ],
           ),
         ],
-      ),
-    );
-  }
-
-  void _startTimer() {
-    // 允许空名称，默认「未命名任务」
-    final name = _nameController.text.trim();
-
-    ref.read(timeRecordServiceProvider).startTimer(
-          name: name.isEmpty ? '未命名任务' : name,
-          categoryId: _selectedCategoryId,
-        );
-    _nameController.clear();
-  }
-}
-
-class _CategoryChip extends StatelessWidget {
-  final Category category;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _CategoryChip({
-    required this.category,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final color = _parseColor(category.color);
-
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: isSelected ? color.withOpacity(0.15) : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isSelected ? color : Colors.grey.shade300,
-            width: isSelected ? 2 : 1,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(
-                color: color,
-                shape: BoxShape.circle,
-              ),
-            ),
-            const SizedBox(width: 6),
-            Text(
-              category.name,
-              style: TextStyle(
-                color: isSelected ? color : Colors.grey.shade600,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                fontSize: 12,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -326,10 +286,41 @@ class _CategoryChip extends StatelessWidget {
       return Colors.grey;
     }
   }
+
+  void _startTimer() async {
+    final name = _nameController.text.trim();
+    final taskName = name.isEmpty ? '未命名任务' : name;
+    final categoryId = _selectedCategoryId;
+
+    await ref.read(timeRecordServiceProvider).startTimer(
+          name: taskName,
+          categoryId: categoryId,
+        );
+    _nameController.clear();
+
+    if (!mounted) return;
+    await Future.delayed(const Duration(milliseconds: 100));
+    if (!mounted) return;
+
+    final activeRecord = await ref.read(activeRecordProvider.future);
+    if (activeRecord != null && mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => TimerDetailScreen(
+            record: activeRecord,
+            onStop: () async {
+              await ref.read(timeRecordServiceProvider).stopTimer();
+            },
+          ),
+        ),
+      );
+    }
+  }
 }
 
-// 计时中状态 - 带动画
-class _ActiveTimerCard extends StatefulWidget {
+// 计时中状态 - 首页卡片样式（TimePad 风格）
+class _ActiveTimerCard extends ConsumerWidget {
   final TimeRecord record;
   final Duration elapsed;
   final VoidCallback onStop;
@@ -342,263 +333,87 @@ class _ActiveTimerCard extends StatefulWidget {
   });
 
   @override
-  State<_ActiveTimerCard> createState() => _ActiveTimerCardState();
-}
-
-class _ActiveTimerCardState extends State<_ActiveTimerCard>
-    with TickerProviderStateMixin {
-  late AnimationController _glowController;
-  late AnimationController _pingController;
-  late AnimationController _breatheController;
-
-  @override
-  void initState() {
-    super.initState();
-    // Magic UI 风格: 柔和的光晕呼吸效果 (3s 周期，更慢更优雅)
-    _glowController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 3000),
-    )..repeat(reverse: true);
-
-    // 绿点 ping 动画 (1.5s 周期)
-    _pingController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1500),
-    )..repeat();
-
-    // Aceternity 风格: 卡片微呼吸效果
-    _breatheController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 4000),
-    )..repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _glowController.dispose();
-    _pingController.dispose();
-    _breatheController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return AnimatedBuilder(
-      animation: _breatheController,
-      builder: (context, child) {
-        // 微妙的阴影呼吸效果
-        final breathe = Curves.easeInOut.transform(_breatheController.value);
-        final shadowOpacity = 0.2 + breathe * 0.1;
-        final shadowBlur = 20.0 + breathe * 10;
-
-        return Container(
-          width: double.infinity,
-          margin: const EdgeInsets.symmetric(horizontal: 20),
-          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 24),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                theme.colorScheme.primary,
-                Color.lerp(
-                  theme.colorScheme.primary,
-                  theme.colorScheme.primaryContainer,
-                  0.3,
-                )!,
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+  Widget build(BuildContext context, WidgetRef ref) {
+    final textTheme = Theme.of(context).textTheme;
+    
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => TimerDetailScreen(
+              record: record,
+              onStop: onStop,
             ),
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: theme.colorScheme.primary.withOpacity(shadowOpacity),
-                blurRadius: shadowBlur,
-                offset: const Offset(0, 8),
-                spreadRadius: breathe * 2,
-              ),
-            ],
           ),
-          clipBehavior: Clip.hardEdge,
-          child: child,
         );
       },
-      child: Stack(
-        children: [
-          // Magic UI 风格: 多层渐变光晕
-          Positioned(
-            top: -60,
-            right: -40,
-            child: IgnorePointer(
-              child: AnimatedBuilder(
-                animation: _glowController,
-                builder: (context, child) {
-                  final t = Curves.easeInOut.transform(_glowController.value);
-                  return Stack(
-                    children: [
-                      // 外层大光晕
-                      Container(
-                        width: 180,
-                        height: 180,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: RadialGradient(
-                            colors: [
-                              Colors.white.withOpacity(0.12 + t * 0.08),
-                              Colors.white.withOpacity(0.05 + t * 0.03),
-                              Colors.white.withOpacity(0),
-                            ],
-                            stops: const [0.0, 0.4, 1.0],
-                          ),
-                        ),
-                      ),
-                      // 内层亮点
-                      Positioned(
-                        top: 50,
-                        left: 50,
-                        child: Container(
-                          width: 80,
-                          height: 80,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: RadialGradient(
-                              colors: [
-                                Colors.white.withOpacity(0.2 + t * 0.1),
-                                Colors.white.withOpacity(0),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  );
-                },
+      child: Container(
+        height: 114,
+        margin: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.fromLTRB(16, 26, 16, 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Stack(
+          children: [
+            // 时间 - 左上
+            Positioned(
+              left: 0,
+              top: 0,
+              child: Text(
+                _formatDuration(elapsed),
+                style: textTheme.headlineMedium?.copyWith(
+                  fontSize: 32,
+                  fontWeight: FontWeight.w500,
+                  color: const Color(0xFF000000),
+                  fontFeatures: [const FontFeature.tabularFigures()],
+                ),
               ),
             ),
-          ),
-          // 内容
-          Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                // 状态指示 - 绿点带 ping 动画
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          // 外圈光晕
-                          AnimatedBuilder(
-                            animation: _pingController,
-                            builder: (context, child) {
-                              final t = Curves.easeOutCubic
-                                  .transform(_pingController.value);
-                              return Container(
-                                width: 8 + t * 16,
-                                height: 8 + t * 16,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: const Color(0xFF4ADE80)
-                                      .withOpacity(0.6 * (1 - t)),
-                                ),
-                              );
-                            },
-                          ),
-                          // 实心绿点 + 微光
-                          Container(
-                            width: 8,
-                            height: 8,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF4ADE80),
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color:
-                                      const Color(0xFF4ADE80).withOpacity(0.5),
-                                  blurRadius: 6,
-                                  spreadRadius: 1,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      '正在记录',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.85),
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                // 任务名称
-                Text(
-                  widget.record.name,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                // 计时器
-                Text(
-                  _formatDuration(widget.elapsed),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 48,
-                    fontWeight: FontWeight.w300,
-                    fontFeatures: [FontFeature.tabularFigures()],
-                    letterSpacing: -1,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                // 停止按钮 - 带悬浮效果
-                GestureDetector(
-                  onTap: widget.onStop,
-                  child: Container(
-                    width: 64,
-                    height: 64,
+            // 项目名 + 紫色圆环 - 左下
+            Positioned(
+              left: 0,
+              top: 44,
+              child: Row(
+                children: [
+                  // 紫色空心圆环
+                  Container(
+                    width: 12,
+                    height: 12,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(20),
+                      shape: BoxShape.circle,
                       border: Border.all(
-                        color: Colors.white.withOpacity(0.2),
-                        width: 1.5,
+                        color: const Color(0xFF8B5CF6),
+                        width: 2,
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.stop_rounded,
-                      color: Colors.white,
-                      size: 28,
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(width: 12),
+                  Text(
+                    record.name,
+                    style: textTheme.bodyLarge?.copyWith(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
+                      color: const Color(0xFF000000),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+            // 右箭头
+            const Positioned(
+              right: 0,
+              top: -2,
+              child: Icon(
+                Icons.chevron_right,
+                size: 24,
+                color: Color(0xFF828282),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -608,5 +423,235 @@ class _ActiveTimerCardState extends State<_ActiveTimerCard>
     final minutes = (d.inMinutes % 60).toString().padLeft(2, '0');
     final seconds = (d.inSeconds % 60).toString().padLeft(2, '0');
     return '$hours:$minutes:$seconds';
+  }
+}
+
+// 计时详情 - 全屏页面（TimePad 风格）
+class TimerDetailScreen extends ConsumerStatefulWidget {
+  final TimeRecord record;
+  final VoidCallback onStop;
+
+  const TimerDetailScreen({
+    super.key,
+    required this.record,
+    required this.onStop,
+  });
+
+  @override
+  ConsumerState<TimerDetailScreen> createState() => _TimerDetailScreenState();
+}
+
+class _TimerDetailScreenState extends ConsumerState<TimerDetailScreen> {
+  late Duration _currentElapsed;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentElapsed = DateTime.now().difference(widget.record.startTime);
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) {
+        setState(() {
+          _currentElapsed = DateTime.now().difference(widget.record.startTime);
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final categoriesAsync = ref.watch(categoriesProvider);
+    final textTheme = Theme.of(context).textTheme;
+    
+    String? categoryName;
+    Color categoryColor = const Color(0xFFFF6B6B);
+    
+    categoriesAsync.whenData((categories) {
+      if (widget.record.categoryId != null) {
+        final category = categories.where((c) => c.id == widget.record.categoryId).firstOrNull;
+        if (category != null) {
+          categoryName = category.name;
+          categoryColor = _parseColor(category.color);
+        }
+      }
+    });
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF1F2937)),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          widget.record.name,
+          style: textTheme.titleMedium?.copyWith(
+            color: const Color(0xFF1F2937),
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        centerTitle: true,
+        actions: [
+          if (categoryName != null)
+            Padding(
+              padding: const EdgeInsets.only(right: 16),
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: categoryColor.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    categoryName!,
+                    style: textTheme.labelMedium?.copyWith(
+                      color: categoryColor,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            children: [
+              const Spacer(flex: 2),
+              // 紫色圆环 + 任务名
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 20,
+                    height: 20,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: const Color(0xFF8B5CF6),
+                        width: 2,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    widget.record.name,
+                    style: textTheme.bodyLarge?.copyWith(
+                      color: Colors.grey.shade600,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              // 大号时间
+              Text(
+                _formatDuration(_currentElapsed),
+                style: textTheme.displayMedium?.copyWith(
+                  color: const Color(0xFF1F2937),
+                  fontSize: 56,
+                  fontWeight: FontWeight.w700,
+                  fontFeatures: [const FontFeature.tabularFigures()],
+                  letterSpacing: -2,
+                ),
+              ),
+              const Spacer(flex: 3),
+              // Finish 按钮
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () async {
+                    await ref.read(timeRecordServiceProvider).stopTimer();
+                    if (mounted) {
+                      Navigator.pop(context);
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFE0E7FF),
+                    foregroundColor: const Color(0xFF1F2937),
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 18),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  child: Text(
+                    '完成',
+                    style: textTheme.titleMedium?.copyWith(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              // Quit 按钮
+              TextButton(
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Text('放弃计时'),
+                      content: const Text('确定要放弃这次计时吗？记录将不会保存。'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx),
+                          child: const Text('取消'),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.pop(ctx);
+                            ref.read(timeRecordServiceProvider).cancelTimer();
+                            Navigator.pop(context);
+                          },
+                          child: const Text('放弃'),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+                child: Text(
+                  '放弃',
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: Colors.grey.shade500,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 32),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _formatDuration(Duration d) {
+    final hours = d.inHours.toString().padLeft(2, '0');
+    final minutes = (d.inMinutes % 60).toString().padLeft(2, '0');
+    final seconds = (d.inSeconds % 60).toString().padLeft(2, '0');
+    return '$hours:$minutes:$seconds';
+  }
+
+  Color _parseColor(String hex) {
+    try {
+      return Color(int.parse(hex.replaceFirst('#', '0xFF')));
+    } catch (_) {
+      return const Color(0xFFFF6B6B);
+    }
   }
 }

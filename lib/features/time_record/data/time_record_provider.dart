@@ -43,6 +43,14 @@ class TimeRecordService {
     return _db.stopActiveRecord();
   }
 
+  // 取消计时（不保存）
+  Future<void> cancelTimer() async {
+    final active = await _db.getActiveRecord();
+    if (active != null) {
+      await _db.deleteRecord(active.id);
+    }
+  }
+
   // 手动添加记录
   Future<int> addRecord({
     required String name,

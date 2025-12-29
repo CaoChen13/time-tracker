@@ -896,8 +896,30 @@ class $EventTemplatesTable extends EventTemplates
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _isQuickAccessMeta = const VerificationMeta(
+    'isQuickAccess',
+  );
   @override
-  List<GeneratedColumn> get $columns => [id, name, categoryId, tags, sortOrder];
+  late final GeneratedColumn<bool> isQuickAccess = GeneratedColumn<bool>(
+    'is_quick_access',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_quick_access" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    categoryId,
+    tags,
+    sortOrder,
+    isQuickAccess,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -939,6 +961,15 @@ class $EventTemplatesTable extends EventTemplates
         sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
       );
     }
+    if (data.containsKey('is_quick_access')) {
+      context.handle(
+        _isQuickAccessMeta,
+        isQuickAccess.isAcceptableOrUnknown(
+          data['is_quick_access']!,
+          _isQuickAccessMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -968,6 +999,10 @@ class $EventTemplatesTable extends EventTemplates
         DriftSqlType.int,
         data['${effectivePrefix}sort_order'],
       )!,
+      isQuickAccess: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_quick_access'],
+      )!,
     );
   }
 
@@ -983,12 +1018,14 @@ class EventTemplate extends DataClass implements Insertable<EventTemplate> {
   final int? categoryId;
   final String? tags;
   final int sortOrder;
+  final bool isQuickAccess;
   const EventTemplate({
     required this.id,
     required this.name,
     this.categoryId,
     this.tags,
     required this.sortOrder,
+    required this.isQuickAccess,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1002,6 +1039,7 @@ class EventTemplate extends DataClass implements Insertable<EventTemplate> {
       map['tags'] = Variable<String>(tags);
     }
     map['sort_order'] = Variable<int>(sortOrder);
+    map['is_quick_access'] = Variable<bool>(isQuickAccess);
     return map;
   }
 
@@ -1014,6 +1052,7 @@ class EventTemplate extends DataClass implements Insertable<EventTemplate> {
           : Value(categoryId),
       tags: tags == null && nullToAbsent ? const Value.absent() : Value(tags),
       sortOrder: Value(sortOrder),
+      isQuickAccess: Value(isQuickAccess),
     );
   }
 
@@ -1028,6 +1067,7 @@ class EventTemplate extends DataClass implements Insertable<EventTemplate> {
       categoryId: serializer.fromJson<int?>(json['categoryId']),
       tags: serializer.fromJson<String?>(json['tags']),
       sortOrder: serializer.fromJson<int>(json['sortOrder']),
+      isQuickAccess: serializer.fromJson<bool>(json['isQuickAccess']),
     );
   }
   @override
@@ -1039,6 +1079,7 @@ class EventTemplate extends DataClass implements Insertable<EventTemplate> {
       'categoryId': serializer.toJson<int?>(categoryId),
       'tags': serializer.toJson<String?>(tags),
       'sortOrder': serializer.toJson<int>(sortOrder),
+      'isQuickAccess': serializer.toJson<bool>(isQuickAccess),
     };
   }
 
@@ -1048,12 +1089,14 @@ class EventTemplate extends DataClass implements Insertable<EventTemplate> {
     Value<int?> categoryId = const Value.absent(),
     Value<String?> tags = const Value.absent(),
     int? sortOrder,
+    bool? isQuickAccess,
   }) => EventTemplate(
     id: id ?? this.id,
     name: name ?? this.name,
     categoryId: categoryId.present ? categoryId.value : this.categoryId,
     tags: tags.present ? tags.value : this.tags,
     sortOrder: sortOrder ?? this.sortOrder,
+    isQuickAccess: isQuickAccess ?? this.isQuickAccess,
   );
   EventTemplate copyWithCompanion(EventTemplatesCompanion data) {
     return EventTemplate(
@@ -1064,6 +1107,9 @@ class EventTemplate extends DataClass implements Insertable<EventTemplate> {
           : this.categoryId,
       tags: data.tags.present ? data.tags.value : this.tags,
       sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+      isQuickAccess: data.isQuickAccess.present
+          ? data.isQuickAccess.value
+          : this.isQuickAccess,
     );
   }
 
@@ -1074,13 +1120,15 @@ class EventTemplate extends DataClass implements Insertable<EventTemplate> {
           ..write('name: $name, ')
           ..write('categoryId: $categoryId, ')
           ..write('tags: $tags, ')
-          ..write('sortOrder: $sortOrder')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('isQuickAccess: $isQuickAccess')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, name, categoryId, tags, sortOrder);
+  int get hashCode =>
+      Object.hash(id, name, categoryId, tags, sortOrder, isQuickAccess);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1089,7 +1137,8 @@ class EventTemplate extends DataClass implements Insertable<EventTemplate> {
           other.name == this.name &&
           other.categoryId == this.categoryId &&
           other.tags == this.tags &&
-          other.sortOrder == this.sortOrder);
+          other.sortOrder == this.sortOrder &&
+          other.isQuickAccess == this.isQuickAccess);
 }
 
 class EventTemplatesCompanion extends UpdateCompanion<EventTemplate> {
@@ -1098,12 +1147,14 @@ class EventTemplatesCompanion extends UpdateCompanion<EventTemplate> {
   final Value<int?> categoryId;
   final Value<String?> tags;
   final Value<int> sortOrder;
+  final Value<bool> isQuickAccess;
   const EventTemplatesCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
     this.categoryId = const Value.absent(),
     this.tags = const Value.absent(),
     this.sortOrder = const Value.absent(),
+    this.isQuickAccess = const Value.absent(),
   });
   EventTemplatesCompanion.insert({
     this.id = const Value.absent(),
@@ -1111,6 +1162,7 @@ class EventTemplatesCompanion extends UpdateCompanion<EventTemplate> {
     this.categoryId = const Value.absent(),
     this.tags = const Value.absent(),
     this.sortOrder = const Value.absent(),
+    this.isQuickAccess = const Value.absent(),
   }) : name = Value(name);
   static Insertable<EventTemplate> custom({
     Expression<int>? id,
@@ -1118,6 +1170,7 @@ class EventTemplatesCompanion extends UpdateCompanion<EventTemplate> {
     Expression<int>? categoryId,
     Expression<String>? tags,
     Expression<int>? sortOrder,
+    Expression<bool>? isQuickAccess,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1125,6 +1178,7 @@ class EventTemplatesCompanion extends UpdateCompanion<EventTemplate> {
       if (categoryId != null) 'category_id': categoryId,
       if (tags != null) 'tags': tags,
       if (sortOrder != null) 'sort_order': sortOrder,
+      if (isQuickAccess != null) 'is_quick_access': isQuickAccess,
     });
   }
 
@@ -1134,6 +1188,7 @@ class EventTemplatesCompanion extends UpdateCompanion<EventTemplate> {
     Value<int?>? categoryId,
     Value<String?>? tags,
     Value<int>? sortOrder,
+    Value<bool>? isQuickAccess,
   }) {
     return EventTemplatesCompanion(
       id: id ?? this.id,
@@ -1141,6 +1196,7 @@ class EventTemplatesCompanion extends UpdateCompanion<EventTemplate> {
       categoryId: categoryId ?? this.categoryId,
       tags: tags ?? this.tags,
       sortOrder: sortOrder ?? this.sortOrder,
+      isQuickAccess: isQuickAccess ?? this.isQuickAccess,
     );
   }
 
@@ -1162,6 +1218,9 @@ class EventTemplatesCompanion extends UpdateCompanion<EventTemplate> {
     if (sortOrder.present) {
       map['sort_order'] = Variable<int>(sortOrder.value);
     }
+    if (isQuickAccess.present) {
+      map['is_quick_access'] = Variable<bool>(isQuickAccess.value);
+    }
     return map;
   }
 
@@ -1172,7 +1231,8 @@ class EventTemplatesCompanion extends UpdateCompanion<EventTemplate> {
           ..write('name: $name, ')
           ..write('categoryId: $categoryId, ')
           ..write('tags: $tags, ')
-          ..write('sortOrder: $sortOrder')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('isQuickAccess: $isQuickAccess')
           ..write(')'))
         .toString();
   }
@@ -1643,6 +1703,7 @@ typedef $$EventTemplatesTableCreateCompanionBuilder =
       Value<int?> categoryId,
       Value<String?> tags,
       Value<int> sortOrder,
+      Value<bool> isQuickAccess,
     });
 typedef $$EventTemplatesTableUpdateCompanionBuilder =
     EventTemplatesCompanion Function({
@@ -1651,6 +1712,7 @@ typedef $$EventTemplatesTableUpdateCompanionBuilder =
       Value<int?> categoryId,
       Value<String?> tags,
       Value<int> sortOrder,
+      Value<bool> isQuickAccess,
     });
 
 class $$EventTemplatesTableFilterComposer
@@ -1684,6 +1746,11 @@ class $$EventTemplatesTableFilterComposer
 
   ColumnFilters<int> get sortOrder => $composableBuilder(
     column: $table.sortOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isQuickAccess => $composableBuilder(
+    column: $table.isQuickAccess,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -1721,6 +1788,11 @@ class $$EventTemplatesTableOrderingComposer
     column: $table.sortOrder,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get isQuickAccess => $composableBuilder(
+    column: $table.isQuickAccess,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$EventTemplatesTableAnnotationComposer
@@ -1748,6 +1820,11 @@ class $$EventTemplatesTableAnnotationComposer
 
   GeneratedColumn<int> get sortOrder =>
       $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+
+  GeneratedColumn<bool> get isQuickAccess => $composableBuilder(
+    column: $table.isQuickAccess,
+    builder: (column) => column,
+  );
 }
 
 class $$EventTemplatesTableTableManager
@@ -1788,12 +1865,14 @@ class $$EventTemplatesTableTableManager
                 Value<int?> categoryId = const Value.absent(),
                 Value<String?> tags = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
+                Value<bool> isQuickAccess = const Value.absent(),
               }) => EventTemplatesCompanion(
                 id: id,
                 name: name,
                 categoryId: categoryId,
                 tags: tags,
                 sortOrder: sortOrder,
+                isQuickAccess: isQuickAccess,
               ),
           createCompanionCallback:
               ({
@@ -1802,12 +1881,14 @@ class $$EventTemplatesTableTableManager
                 Value<int?> categoryId = const Value.absent(),
                 Value<String?> tags = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
+                Value<bool> isQuickAccess = const Value.absent(),
               }) => EventTemplatesCompanion.insert(
                 id: id,
                 name: name,
                 categoryId: categoryId,
                 tags: tags,
                 sortOrder: sortOrder,
+                isQuickAccess: isQuickAccess,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

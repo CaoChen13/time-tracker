@@ -35,6 +35,8 @@ class EventTemplates extends Table {
   IntColumn get categoryId => integer().nullable()();
   TextColumn get tags => text().nullable()();
   IntColumn get sortOrder => integer().withDefault(const Constant(0))();
+  // 是否在快捷启动中显示
+  BoolColumn get isQuickAccess => boolean().withDefault(const Constant(false))();
 }
 
 @DriftDatabase(tables: [TimeRecords, Categories, EventTemplates])
@@ -44,7 +46,18 @@ class AppDatabase extends _$AppDatabase {
   static final AppDatabase instance = AppDatabase._();
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+        onCreate: (Migrator m) => m.createAll(),
+        onUpgrade: (Migrator m, int from, int to) async {
+          if (from < 2) {
+            // 添加 isQuickAccess 字段
+            await m.addColumn(eventTemplates, eventTemplates.isQuickAccess);
+          }
+        },
+      );
 
   Future<void> init() async {
     await customSelect('SELECT 1').get();
@@ -68,6 +81,38 @@ class AppDatabase extends _$AppDatabase {
 
   Future<int> deleteCategory(int id) =>
       (delete(categories)..where((t) => t.id.equals(id))).go();
+
+  // ========== 事件模板操作 ==========
+
+  Stream<List<EventTemplate>> watchAllTemplates() =>
+      (select(eventTemplates)..orderBy([(t) => OrderingTerm.asc(t.sortOrder)]))
+          .watch();
+
+  // 只获取快捷启动的模板
+  Stream<List<EventTemplate>> watchQuickAccessTemplates() =>
+      (select(eventTemplates)
+            ..where((t) => t.isQuickAccess.equals(true))
+            ..orderBy([(t) => OrderingTerm.asc(t.sortOrder)]))
+          .watch();
+
+  Future<List<EventTemplate>> getAllTemplates() =>
+      (select(eventTemplates)..orderBy([(t) => OrderingTerm.asc(t.sortOrder)]))
+          .get();
+
+  Future<int> insertTemplate(EventTemplatesCompanion template) =>
+      into(eventTemplates).insert(template);
+
+  Future<bool> updateTemplate(EventTemplate template) =>
+      update(eventTemplates).replace(template);
+
+  Future<int> deleteTemplate(int id) =>
+      (delete(eventTemplates)..where((t) => t.id.equals(id))).go();
+
+  // 设置模板的快捷启动状态
+  Future<void> setQuickAccess(int id, bool value) async {
+    await (update(eventTemplates)..where((t) => t.id.equals(id)))
+        .write(EventTemplatesCompanion(isQuickAccess: Value(value)));
+  }
 
   // ========== 时间记录操作 ==========
 
