@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../data/time_record_provider.dart';
 import '../../category/data/category_provider.dart';
-import '../../category/presentation/category_list_screen.dart';
 import '../../../core/database/database.dart';
 
 class TimerCard extends ConsumerStatefulWidget {
@@ -20,6 +20,18 @@ class _TimerCardState extends ConsumerState<TimerCard> {
   DateTime? _activeStartTime;
 
   @override
+  void initState() {
+    super.initState();
+    // 初始化时检查是否有活跃记录
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final activeRecord = ref.read(activeRecordProvider).valueOrNull;
+      if (activeRecord != null) {
+        _startTimer(activeRecord);
+      }
+    });
+  }
+
+  @override
   void dispose() {
     _timer?.cancel();
     super.dispose();
@@ -27,13 +39,25 @@ class _TimerCardState extends ConsumerState<TimerCard> {
 
   @override
   Widget build(BuildContext context) {
+    // 使用 ref.listen 监听变化，而不是在 build 中处理副作用
+    ref.listen<AsyncValue<TimeRecord?>>(activeRecordProvider, (previous, next) {
+      final prevRecord = previous?.valueOrNull;
+      final nextRecord = next.valueOrNull;
+      
+      // 记录变化时处理 timer
+      if (nextRecord != null && (prevRecord?.id != nextRecord.id || prevRecord?.startTime != nextRecord.startTime)) {
+        _startTimer(nextRecord);
+      } else if (nextRecord == null && prevRecord != null) {
+        _resetTimerState();
+      }
+    });
+
     final activeRecordAsync = ref.watch(activeRecordProvider);
 
     return activeRecordAsync.when(
       data: (activeRecord) {
         Widget child;
         if (activeRecord != null) {
-          _startTimerIfNeeded(activeRecord);
           child = _ActiveTimerCard(
             key: const ValueKey('active'),
             record: activeRecord,
@@ -41,7 +65,6 @@ class _TimerCardState extends ConsumerState<TimerCard> {
             onStop: _stopTimer,
           );
         } else {
-          _resetTimerState();
           child = const _IdleTimerCard(key: ValueKey('idle'));
         }
         // 卡片切换过渡动画
@@ -69,15 +92,16 @@ class _TimerCardState extends ConsumerState<TimerCard> {
     );
   }
 
-  void _startTimerIfNeeded(TimeRecord record) {
-    if (_activeRecordId == record.id &&
-        _activeStartTime == record.startTime) {
+  void _startTimer(TimeRecord record) {
+    if (_activeRecordId == record.id && _activeStartTime == record.startTime) {
       return;
     }
 
     _activeRecordId = record.id;
     _activeStartTime = record.startTime;
     _timer?.cancel();
+    
+    _elapsed = DateTime.now().difference(record.startTime);
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) {
         setState(() {
@@ -85,10 +109,8 @@ class _TimerCardState extends ConsumerState<TimerCard> {
         });
       }
     });
-
-    setState(() {
-      _elapsed = DateTime.now().difference(record.startTime);
-    });
+    
+    if (mounted) setState(() {});
   }
 
   void _stopTimer() {
@@ -101,11 +123,10 @@ class _TimerCardState extends ConsumerState<TimerCard> {
     if (_activeRecordId == null) return;
 
     _timer?.cancel();
-    setState(() {
-      _activeRecordId = null;
-      _activeStartTime = null;
-      _elapsed = Duration.zero;
-    });
+    _activeRecordId = null;
+    _activeStartTime = null;
+    _elapsed = Duration.zero;
+    if (mounted) setState(() {});
   }
 }
 
@@ -226,12 +247,7 @@ class _IdleTimerCardState extends ConsumerState<_IdleTimerCard> {
                         // 添加分类按钮
                         GestureDetector(
                           onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const CategoryListScreen(),
-                              ),
-                            );
+                            context.push('/categories');
                           },
                           child: Container(
                             width: 24,

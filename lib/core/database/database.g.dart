@@ -3,6 +3,343 @@
 part of 'database.dart';
 
 // ignore_for_file: type=lint
+class $CategoriesTable extends Categories
+    with TableInfo<$CategoriesTable, Category> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CategoriesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _colorMeta = const VerificationMeta('color');
+  @override
+  late final GeneratedColumn<String> color = GeneratedColumn<String>(
+    'color',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _iconMeta = const VerificationMeta('icon');
+  @override
+  late final GeneratedColumn<String> icon = GeneratedColumn<String>(
+    'icon',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sortOrderMeta = const VerificationMeta(
+    'sortOrder',
+  );
+  @override
+  late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
+    'sort_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, name, color, icon, sortOrder];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'categories';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Category> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('color')) {
+      context.handle(
+        _colorMeta,
+        color.isAcceptableOrUnknown(data['color']!, _colorMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_colorMeta);
+    }
+    if (data.containsKey('icon')) {
+      context.handle(
+        _iconMeta,
+        icon.isAcceptableOrUnknown(data['icon']!, _iconMeta),
+      );
+    }
+    if (data.containsKey('sort_order')) {
+      context.handle(
+        _sortOrderMeta,
+        sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Category map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Category(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      color: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}color'],
+      )!,
+      icon: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}icon'],
+      ),
+      sortOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sort_order'],
+      )!,
+    );
+  }
+
+  @override
+  $CategoriesTable createAlias(String alias) {
+    return $CategoriesTable(attachedDatabase, alias);
+  }
+}
+
+class Category extends DataClass implements Insertable<Category> {
+  final int id;
+  final String name;
+  final String color;
+  final String? icon;
+  final int sortOrder;
+  const Category({
+    required this.id,
+    required this.name,
+    required this.color,
+    this.icon,
+    required this.sortOrder,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['name'] = Variable<String>(name);
+    map['color'] = Variable<String>(color);
+    if (!nullToAbsent || icon != null) {
+      map['icon'] = Variable<String>(icon);
+    }
+    map['sort_order'] = Variable<int>(sortOrder);
+    return map;
+  }
+
+  CategoriesCompanion toCompanion(bool nullToAbsent) {
+    return CategoriesCompanion(
+      id: Value(id),
+      name: Value(name),
+      color: Value(color),
+      icon: icon == null && nullToAbsent ? const Value.absent() : Value(icon),
+      sortOrder: Value(sortOrder),
+    );
+  }
+
+  factory Category.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Category(
+      id: serializer.fromJson<int>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      color: serializer.fromJson<String>(json['color']),
+      icon: serializer.fromJson<String?>(json['icon']),
+      sortOrder: serializer.fromJson<int>(json['sortOrder']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'name': serializer.toJson<String>(name),
+      'color': serializer.toJson<String>(color),
+      'icon': serializer.toJson<String?>(icon),
+      'sortOrder': serializer.toJson<int>(sortOrder),
+    };
+  }
+
+  Category copyWith({
+    int? id,
+    String? name,
+    String? color,
+    Value<String?> icon = const Value.absent(),
+    int? sortOrder,
+  }) => Category(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    color: color ?? this.color,
+    icon: icon.present ? icon.value : this.icon,
+    sortOrder: sortOrder ?? this.sortOrder,
+  );
+  Category copyWithCompanion(CategoriesCompanion data) {
+    return Category(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      color: data.color.present ? data.color.value : this.color,
+      icon: data.icon.present ? data.icon.value : this.icon,
+      sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Category(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('color: $color, ')
+          ..write('icon: $icon, ')
+          ..write('sortOrder: $sortOrder')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, name, color, icon, sortOrder);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Category &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.color == this.color &&
+          other.icon == this.icon &&
+          other.sortOrder == this.sortOrder);
+}
+
+class CategoriesCompanion extends UpdateCompanion<Category> {
+  final Value<int> id;
+  final Value<String> name;
+  final Value<String> color;
+  final Value<String?> icon;
+  final Value<int> sortOrder;
+  const CategoriesCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.color = const Value.absent(),
+    this.icon = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+  });
+  CategoriesCompanion.insert({
+    this.id = const Value.absent(),
+    required String name,
+    required String color,
+    this.icon = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+  }) : name = Value(name),
+       color = Value(color);
+  static Insertable<Category> custom({
+    Expression<int>? id,
+    Expression<String>? name,
+    Expression<String>? color,
+    Expression<String>? icon,
+    Expression<int>? sortOrder,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (color != null) 'color': color,
+      if (icon != null) 'icon': icon,
+      if (sortOrder != null) 'sort_order': sortOrder,
+    });
+  }
+
+  CategoriesCompanion copyWith({
+    Value<int>? id,
+    Value<String>? name,
+    Value<String>? color,
+    Value<String?>? icon,
+    Value<int>? sortOrder,
+  }) {
+    return CategoriesCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      color: color ?? this.color,
+      icon: icon ?? this.icon,
+      sortOrder: sortOrder ?? this.sortOrder,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (color.present) {
+      map['color'] = Variable<String>(color.value);
+    }
+    if (icon.present) {
+      map['icon'] = Variable<String>(icon.value);
+    }
+    if (sortOrder.present) {
+      map['sort_order'] = Variable<int>(sortOrder.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CategoriesCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('color: $color, ')
+          ..write('icon: $icon, ')
+          ..write('sortOrder: $sortOrder')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $TimeRecordsTable extends TimeRecords
     with TableInfo<$TimeRecordsTable, TimeRecord> {
   @override
@@ -63,6 +400,9 @@ class $TimeRecordsTable extends TimeRecords
     true,
     type: DriftSqlType.int,
     requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES categories (id) ON DELETE SET NULL',
+    ),
   );
   static const VerificationMeta _tagsMeta = const VerificationMeta('tags');
   @override
@@ -499,343 +839,6 @@ class TimeRecordsCompanion extends UpdateCompanion<TimeRecord> {
   }
 }
 
-class $CategoriesTable extends Categories
-    with TableInfo<$CategoriesTable, Category> {
-  @override
-  final GeneratedDatabase attachedDatabase;
-  final String? _alias;
-  $CategoriesTable(this.attachedDatabase, [this._alias]);
-  static const VerificationMeta _idMeta = const VerificationMeta('id');
-  @override
-  late final GeneratedColumn<int> id = GeneratedColumn<int>(
-    'id',
-    aliasedName,
-    false,
-    hasAutoIncrement: true,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'PRIMARY KEY AUTOINCREMENT',
-    ),
-  );
-  static const VerificationMeta _nameMeta = const VerificationMeta('name');
-  @override
-  late final GeneratedColumn<String> name = GeneratedColumn<String>(
-    'name',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _colorMeta = const VerificationMeta('color');
-  @override
-  late final GeneratedColumn<String> color = GeneratedColumn<String>(
-    'color',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _iconMeta = const VerificationMeta('icon');
-  @override
-  late final GeneratedColumn<String> icon = GeneratedColumn<String>(
-    'icon',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _sortOrderMeta = const VerificationMeta(
-    'sortOrder',
-  );
-  @override
-  late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
-    'sort_order',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-    defaultValue: const Constant(0),
-  );
-  @override
-  List<GeneratedColumn> get $columns => [id, name, color, icon, sortOrder];
-  @override
-  String get aliasedName => _alias ?? actualTableName;
-  @override
-  String get actualTableName => $name;
-  static const String $name = 'categories';
-  @override
-  VerificationContext validateIntegrity(
-    Insertable<Category> instance, {
-    bool isInserting = false,
-  }) {
-    final context = VerificationContext();
-    final data = instance.toColumns(true);
-    if (data.containsKey('id')) {
-      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
-    }
-    if (data.containsKey('name')) {
-      context.handle(
-        _nameMeta,
-        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_nameMeta);
-    }
-    if (data.containsKey('color')) {
-      context.handle(
-        _colorMeta,
-        color.isAcceptableOrUnknown(data['color']!, _colorMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_colorMeta);
-    }
-    if (data.containsKey('icon')) {
-      context.handle(
-        _iconMeta,
-        icon.isAcceptableOrUnknown(data['icon']!, _iconMeta),
-      );
-    }
-    if (data.containsKey('sort_order')) {
-      context.handle(
-        _sortOrderMeta,
-        sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
-      );
-    }
-    return context;
-  }
-
-  @override
-  Set<GeneratedColumn> get $primaryKey => {id};
-  @override
-  Category map(Map<String, dynamic> data, {String? tablePrefix}) {
-    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return Category(
-      id: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}id'],
-      )!,
-      name: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}name'],
-      )!,
-      color: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}color'],
-      )!,
-      icon: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}icon'],
-      ),
-      sortOrder: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}sort_order'],
-      )!,
-    );
-  }
-
-  @override
-  $CategoriesTable createAlias(String alias) {
-    return $CategoriesTable(attachedDatabase, alias);
-  }
-}
-
-class Category extends DataClass implements Insertable<Category> {
-  final int id;
-  final String name;
-  final String color;
-  final String? icon;
-  final int sortOrder;
-  const Category({
-    required this.id,
-    required this.name,
-    required this.color,
-    this.icon,
-    required this.sortOrder,
-  });
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    map['id'] = Variable<int>(id);
-    map['name'] = Variable<String>(name);
-    map['color'] = Variable<String>(color);
-    if (!nullToAbsent || icon != null) {
-      map['icon'] = Variable<String>(icon);
-    }
-    map['sort_order'] = Variable<int>(sortOrder);
-    return map;
-  }
-
-  CategoriesCompanion toCompanion(bool nullToAbsent) {
-    return CategoriesCompanion(
-      id: Value(id),
-      name: Value(name),
-      color: Value(color),
-      icon: icon == null && nullToAbsent ? const Value.absent() : Value(icon),
-      sortOrder: Value(sortOrder),
-    );
-  }
-
-  factory Category.fromJson(
-    Map<String, dynamic> json, {
-    ValueSerializer? serializer,
-  }) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return Category(
-      id: serializer.fromJson<int>(json['id']),
-      name: serializer.fromJson<String>(json['name']),
-      color: serializer.fromJson<String>(json['color']),
-      icon: serializer.fromJson<String?>(json['icon']),
-      sortOrder: serializer.fromJson<int>(json['sortOrder']),
-    );
-  }
-  @override
-  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return <String, dynamic>{
-      'id': serializer.toJson<int>(id),
-      'name': serializer.toJson<String>(name),
-      'color': serializer.toJson<String>(color),
-      'icon': serializer.toJson<String?>(icon),
-      'sortOrder': serializer.toJson<int>(sortOrder),
-    };
-  }
-
-  Category copyWith({
-    int? id,
-    String? name,
-    String? color,
-    Value<String?> icon = const Value.absent(),
-    int? sortOrder,
-  }) => Category(
-    id: id ?? this.id,
-    name: name ?? this.name,
-    color: color ?? this.color,
-    icon: icon.present ? icon.value : this.icon,
-    sortOrder: sortOrder ?? this.sortOrder,
-  );
-  Category copyWithCompanion(CategoriesCompanion data) {
-    return Category(
-      id: data.id.present ? data.id.value : this.id,
-      name: data.name.present ? data.name.value : this.name,
-      color: data.color.present ? data.color.value : this.color,
-      icon: data.icon.present ? data.icon.value : this.icon,
-      sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
-    );
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('Category(')
-          ..write('id: $id, ')
-          ..write('name: $name, ')
-          ..write('color: $color, ')
-          ..write('icon: $icon, ')
-          ..write('sortOrder: $sortOrder')
-          ..write(')'))
-        .toString();
-  }
-
-  @override
-  int get hashCode => Object.hash(id, name, color, icon, sortOrder);
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      (other is Category &&
-          other.id == this.id &&
-          other.name == this.name &&
-          other.color == this.color &&
-          other.icon == this.icon &&
-          other.sortOrder == this.sortOrder);
-}
-
-class CategoriesCompanion extends UpdateCompanion<Category> {
-  final Value<int> id;
-  final Value<String> name;
-  final Value<String> color;
-  final Value<String?> icon;
-  final Value<int> sortOrder;
-  const CategoriesCompanion({
-    this.id = const Value.absent(),
-    this.name = const Value.absent(),
-    this.color = const Value.absent(),
-    this.icon = const Value.absent(),
-    this.sortOrder = const Value.absent(),
-  });
-  CategoriesCompanion.insert({
-    this.id = const Value.absent(),
-    required String name,
-    required String color,
-    this.icon = const Value.absent(),
-    this.sortOrder = const Value.absent(),
-  }) : name = Value(name),
-       color = Value(color);
-  static Insertable<Category> custom({
-    Expression<int>? id,
-    Expression<String>? name,
-    Expression<String>? color,
-    Expression<String>? icon,
-    Expression<int>? sortOrder,
-  }) {
-    return RawValuesInsertable({
-      if (id != null) 'id': id,
-      if (name != null) 'name': name,
-      if (color != null) 'color': color,
-      if (icon != null) 'icon': icon,
-      if (sortOrder != null) 'sort_order': sortOrder,
-    });
-  }
-
-  CategoriesCompanion copyWith({
-    Value<int>? id,
-    Value<String>? name,
-    Value<String>? color,
-    Value<String?>? icon,
-    Value<int>? sortOrder,
-  }) {
-    return CategoriesCompanion(
-      id: id ?? this.id,
-      name: name ?? this.name,
-      color: color ?? this.color,
-      icon: icon ?? this.icon,
-      sortOrder: sortOrder ?? this.sortOrder,
-    );
-  }
-
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    if (id.present) {
-      map['id'] = Variable<int>(id.value);
-    }
-    if (name.present) {
-      map['name'] = Variable<String>(name.value);
-    }
-    if (color.present) {
-      map['color'] = Variable<String>(color.value);
-    }
-    if (icon.present) {
-      map['icon'] = Variable<String>(icon.value);
-    }
-    if (sortOrder.present) {
-      map['sort_order'] = Variable<int>(sortOrder.value);
-    }
-    return map;
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('CategoriesCompanion(')
-          ..write('id: $id, ')
-          ..write('name: $name, ')
-          ..write('color: $color, ')
-          ..write('icon: $icon, ')
-          ..write('sortOrder: $sortOrder')
-          ..write(')'))
-        .toString();
-  }
-}
-
 class $EventTemplatesTable extends EventTemplates
     with TableInfo<$EventTemplatesTable, EventTemplate> {
   @override
@@ -874,6 +877,9 @@ class $EventTemplatesTable extends EventTemplates
     true,
     type: DriftSqlType.int,
     requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES categories (id) ON DELETE SET NULL',
+    ),
   );
   static const VerificationMeta _tagsMeta = const VerificationMeta('tags');
   @override
@@ -1241,273 +1247,52 @@ class EventTemplatesCompanion extends UpdateCompanion<EventTemplate> {
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
-  late final $TimeRecordsTable timeRecords = $TimeRecordsTable(this);
   late final $CategoriesTable categories = $CategoriesTable(this);
+  late final $TimeRecordsTable timeRecords = $TimeRecordsTable(this);
   late final $EventTemplatesTable eventTemplates = $EventTemplatesTable(this);
+  late final Index idxTimeRecordsStartTime = Index(
+    'idx_time_records_start_time',
+    'CREATE INDEX idx_time_records_start_time ON time_records (start_time)',
+  );
+  late final Index idxTimeRecordsEndTime = Index(
+    'idx_time_records_end_time',
+    'CREATE INDEX idx_time_records_end_time ON time_records (end_time)',
+  );
+  late final Index idxEventTemplatesQuickAccess = Index(
+    'idx_event_templates_quick_access',
+    'CREATE INDEX idx_event_templates_quick_access ON event_templates (is_quick_access)',
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities => [
-    timeRecords,
     categories,
+    timeRecords,
     eventTemplates,
+    idxTimeRecordsStartTime,
+    idxTimeRecordsEndTime,
+    idxEventTemplatesQuickAccess,
   ];
-}
-
-typedef $$TimeRecordsTableCreateCompanionBuilder =
-    TimeRecordsCompanion Function({
-      Value<int> id,
-      required String name,
-      required DateTime startTime,
-      Value<DateTime?> endTime,
-      Value<int?> categoryId,
-      Value<String?> tags,
-      Value<String?> note,
-      Value<DateTime> createdAt,
-    });
-typedef $$TimeRecordsTableUpdateCompanionBuilder =
-    TimeRecordsCompanion Function({
-      Value<int> id,
-      Value<String> name,
-      Value<DateTime> startTime,
-      Value<DateTime?> endTime,
-      Value<int?> categoryId,
-      Value<String?> tags,
-      Value<String?> note,
-      Value<DateTime> createdAt,
-    });
-
-class $$TimeRecordsTableFilterComposer
-    extends Composer<_$AppDatabase, $TimeRecordsTable> {
-  $$TimeRecordsTableFilterComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnFilters<int> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get name => $composableBuilder(
-    column: $table.name,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<DateTime> get startTime => $composableBuilder(
-    column: $table.startTime,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<DateTime> get endTime => $composableBuilder(
-    column: $table.endTime,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<int> get categoryId => $composableBuilder(
-    column: $table.categoryId,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get tags => $composableBuilder(
-    column: $table.tags,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get note => $composableBuilder(
-    column: $table.note,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<DateTime> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnFilters(column),
-  );
-}
-
-class $$TimeRecordsTableOrderingComposer
-    extends Composer<_$AppDatabase, $TimeRecordsTable> {
-  $$TimeRecordsTableOrderingComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnOrderings<int> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get name => $composableBuilder(
-    column: $table.name,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<DateTime> get startTime => $composableBuilder(
-    column: $table.startTime,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<DateTime> get endTime => $composableBuilder(
-    column: $table.endTime,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<int> get categoryId => $composableBuilder(
-    column: $table.categoryId,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get tags => $composableBuilder(
-    column: $table.tags,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get note => $composableBuilder(
-    column: $table.note,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnOrderings(column),
-  );
-}
-
-class $$TimeRecordsTableAnnotationComposer
-    extends Composer<_$AppDatabase, $TimeRecordsTable> {
-  $$TimeRecordsTableAnnotationComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  GeneratedColumn<int> get id =>
-      $composableBuilder(column: $table.id, builder: (column) => column);
-
-  GeneratedColumn<String> get name =>
-      $composableBuilder(column: $table.name, builder: (column) => column);
-
-  GeneratedColumn<DateTime> get startTime =>
-      $composableBuilder(column: $table.startTime, builder: (column) => column);
-
-  GeneratedColumn<DateTime> get endTime =>
-      $composableBuilder(column: $table.endTime, builder: (column) => column);
-
-  GeneratedColumn<int> get categoryId => $composableBuilder(
-    column: $table.categoryId,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get tags =>
-      $composableBuilder(column: $table.tags, builder: (column) => column);
-
-  GeneratedColumn<String> get note =>
-      $composableBuilder(column: $table.note, builder: (column) => column);
-
-  GeneratedColumn<DateTime> get createdAt =>
-      $composableBuilder(column: $table.createdAt, builder: (column) => column);
-}
-
-class $$TimeRecordsTableTableManager
-    extends
-        RootTableManager<
-          _$AppDatabase,
-          $TimeRecordsTable,
-          TimeRecord,
-          $$TimeRecordsTableFilterComposer,
-          $$TimeRecordsTableOrderingComposer,
-          $$TimeRecordsTableAnnotationComposer,
-          $$TimeRecordsTableCreateCompanionBuilder,
-          $$TimeRecordsTableUpdateCompanionBuilder,
-          (
-            TimeRecord,
-            BaseReferences<_$AppDatabase, $TimeRecordsTable, TimeRecord>,
-          ),
-          TimeRecord,
-          PrefetchHooks Function()
-        > {
-  $$TimeRecordsTableTableManager(_$AppDatabase db, $TimeRecordsTable table)
-    : super(
-        TableManagerState(
-          db: db,
-          table: table,
-          createFilteringComposer: () =>
-              $$TimeRecordsTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () =>
-              $$TimeRecordsTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () =>
-              $$TimeRecordsTableAnnotationComposer($db: db, $table: table),
-          updateCompanionCallback:
-              ({
-                Value<int> id = const Value.absent(),
-                Value<String> name = const Value.absent(),
-                Value<DateTime> startTime = const Value.absent(),
-                Value<DateTime?> endTime = const Value.absent(),
-                Value<int?> categoryId = const Value.absent(),
-                Value<String?> tags = const Value.absent(),
-                Value<String?> note = const Value.absent(),
-                Value<DateTime> createdAt = const Value.absent(),
-              }) => TimeRecordsCompanion(
-                id: id,
-                name: name,
-                startTime: startTime,
-                endTime: endTime,
-                categoryId: categoryId,
-                tags: tags,
-                note: note,
-                createdAt: createdAt,
-              ),
-          createCompanionCallback:
-              ({
-                Value<int> id = const Value.absent(),
-                required String name,
-                required DateTime startTime,
-                Value<DateTime?> endTime = const Value.absent(),
-                Value<int?> categoryId = const Value.absent(),
-                Value<String?> tags = const Value.absent(),
-                Value<String?> note = const Value.absent(),
-                Value<DateTime> createdAt = const Value.absent(),
-              }) => TimeRecordsCompanion.insert(
-                id: id,
-                name: name,
-                startTime: startTime,
-                endTime: endTime,
-                categoryId: categoryId,
-                tags: tags,
-                note: note,
-                createdAt: createdAt,
-              ),
-          withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
-              .toList(),
-          prefetchHooksCallback: null,
-        ),
-      );
-}
-
-typedef $$TimeRecordsTableProcessedTableManager =
-    ProcessedTableManager<
-      _$AppDatabase,
-      $TimeRecordsTable,
-      TimeRecord,
-      $$TimeRecordsTableFilterComposer,
-      $$TimeRecordsTableOrderingComposer,
-      $$TimeRecordsTableAnnotationComposer,
-      $$TimeRecordsTableCreateCompanionBuilder,
-      $$TimeRecordsTableUpdateCompanionBuilder,
-      (
-        TimeRecord,
-        BaseReferences<_$AppDatabase, $TimeRecordsTable, TimeRecord>,
+  @override
+  StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'categories',
+        limitUpdateKind: UpdateKind.delete,
       ),
-      TimeRecord,
-      PrefetchHooks Function()
-    >;
+      result: [TableUpdate('time_records', kind: UpdateKind.update)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'categories',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('event_templates', kind: UpdateKind.update)],
+    ),
+  ]);
+}
+
 typedef $$CategoriesTableCreateCompanionBuilder =
     CategoriesCompanion Function({
       Value<int> id,
@@ -1524,6 +1309,53 @@ typedef $$CategoriesTableUpdateCompanionBuilder =
       Value<String?> icon,
       Value<int> sortOrder,
     });
+
+final class $$CategoriesTableReferences
+    extends BaseReferences<_$AppDatabase, $CategoriesTable, Category> {
+  $$CategoriesTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$TimeRecordsTable, List<TimeRecord>>
+  _timeRecordsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.timeRecords,
+    aliasName: $_aliasNameGenerator(
+      db.categories.id,
+      db.timeRecords.categoryId,
+    ),
+  );
+
+  $$TimeRecordsTableProcessedTableManager get timeRecordsRefs {
+    final manager = $$TimeRecordsTableTableManager(
+      $_db,
+      $_db.timeRecords,
+    ).filter((f) => f.categoryId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_timeRecordsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$EventTemplatesTable, List<EventTemplate>>
+  _eventTemplatesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.eventTemplates,
+    aliasName: $_aliasNameGenerator(
+      db.categories.id,
+      db.eventTemplates.categoryId,
+    ),
+  );
+
+  $$EventTemplatesTableProcessedTableManager get eventTemplatesRefs {
+    final manager = $$EventTemplatesTableTableManager(
+      $_db,
+      $_db.eventTemplates,
+    ).filter((f) => f.categoryId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_eventTemplatesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
 
 class $$CategoriesTableFilterComposer
     extends Composer<_$AppDatabase, $CategoriesTable> {
@@ -1558,6 +1390,56 @@ class $$CategoriesTableFilterComposer
     column: $table.sortOrder,
     builder: (column) => ColumnFilters(column),
   );
+
+  Expression<bool> timeRecordsRefs(
+    Expression<bool> Function($$TimeRecordsTableFilterComposer f) f,
+  ) {
+    final $$TimeRecordsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.timeRecords,
+      getReferencedColumn: (t) => t.categoryId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TimeRecordsTableFilterComposer(
+            $db: $db,
+            $table: $db.timeRecords,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> eventTemplatesRefs(
+    Expression<bool> Function($$EventTemplatesTableFilterComposer f) f,
+  ) {
+    final $$EventTemplatesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.eventTemplates,
+      getReferencedColumn: (t) => t.categoryId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$EventTemplatesTableFilterComposer(
+            $db: $db,
+            $table: $db.eventTemplates,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$CategoriesTableOrderingComposer
@@ -1618,6 +1500,56 @@ class $$CategoriesTableAnnotationComposer
 
   GeneratedColumn<int> get sortOrder =>
       $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+
+  Expression<T> timeRecordsRefs<T extends Object>(
+    Expression<T> Function($$TimeRecordsTableAnnotationComposer a) f,
+  ) {
+    final $$TimeRecordsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.timeRecords,
+      getReferencedColumn: (t) => t.categoryId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TimeRecordsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.timeRecords,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> eventTemplatesRefs<T extends Object>(
+    Expression<T> Function($$EventTemplatesTableAnnotationComposer a) f,
+  ) {
+    final $$EventTemplatesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.eventTemplates,
+      getReferencedColumn: (t) => t.categoryId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$EventTemplatesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.eventTemplates,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$CategoriesTableTableManager
@@ -1631,9 +1563,12 @@ class $$CategoriesTableTableManager
           $$CategoriesTableAnnotationComposer,
           $$CategoriesTableCreateCompanionBuilder,
           $$CategoriesTableUpdateCompanionBuilder,
-          (Category, BaseReferences<_$AppDatabase, $CategoriesTable, Category>),
+          (Category, $$CategoriesTableReferences),
           Category,
-          PrefetchHooks Function()
+          PrefetchHooks Function({
+            bool timeRecordsRefs,
+            bool eventTemplatesRefs,
+          })
         > {
   $$CategoriesTableTableManager(_$AppDatabase db, $CategoriesTable table)
     : super(
@@ -1675,9 +1610,70 @@ class $$CategoriesTableTableManager
                 sortOrder: sortOrder,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$CategoriesTableReferences(db, table, e),
+                ),
+              )
               .toList(),
-          prefetchHooksCallback: null,
+          prefetchHooksCallback:
+              ({timeRecordsRefs = false, eventTemplatesRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (timeRecordsRefs) db.timeRecords,
+                    if (eventTemplatesRefs) db.eventTemplates,
+                  ],
+                  addJoins: null,
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (timeRecordsRefs)
+                        await $_getPrefetchedData<
+                          Category,
+                          $CategoriesTable,
+                          TimeRecord
+                        >(
+                          currentTable: table,
+                          referencedTable: $$CategoriesTableReferences
+                              ._timeRecordsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$CategoriesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).timeRecordsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.categoryId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (eventTemplatesRefs)
+                        await $_getPrefetchedData<
+                          Category,
+                          $CategoriesTable,
+                          EventTemplate
+                        >(
+                          currentTable: table,
+                          referencedTable: $$CategoriesTableReferences
+                              ._eventTemplatesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$CategoriesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).eventTemplatesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.categoryId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
         ),
       );
 }
@@ -1692,9 +1688,379 @@ typedef $$CategoriesTableProcessedTableManager =
       $$CategoriesTableAnnotationComposer,
       $$CategoriesTableCreateCompanionBuilder,
       $$CategoriesTableUpdateCompanionBuilder,
-      (Category, BaseReferences<_$AppDatabase, $CategoriesTable, Category>),
+      (Category, $$CategoriesTableReferences),
       Category,
-      PrefetchHooks Function()
+      PrefetchHooks Function({bool timeRecordsRefs, bool eventTemplatesRefs})
+    >;
+typedef $$TimeRecordsTableCreateCompanionBuilder =
+    TimeRecordsCompanion Function({
+      Value<int> id,
+      required String name,
+      required DateTime startTime,
+      Value<DateTime?> endTime,
+      Value<int?> categoryId,
+      Value<String?> tags,
+      Value<String?> note,
+      Value<DateTime> createdAt,
+    });
+typedef $$TimeRecordsTableUpdateCompanionBuilder =
+    TimeRecordsCompanion Function({
+      Value<int> id,
+      Value<String> name,
+      Value<DateTime> startTime,
+      Value<DateTime?> endTime,
+      Value<int?> categoryId,
+      Value<String?> tags,
+      Value<String?> note,
+      Value<DateTime> createdAt,
+    });
+
+final class $$TimeRecordsTableReferences
+    extends BaseReferences<_$AppDatabase, $TimeRecordsTable, TimeRecord> {
+  $$TimeRecordsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $CategoriesTable _categoryIdTable(_$AppDatabase db) =>
+      db.categories.createAlias(
+        $_aliasNameGenerator(db.timeRecords.categoryId, db.categories.id),
+      );
+
+  $$CategoriesTableProcessedTableManager? get categoryId {
+    final $_column = $_itemColumn<int>('category_id');
+    if ($_column == null) return null;
+    final manager = $$CategoriesTableTableManager(
+      $_db,
+      $_db.categories,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_categoryIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$TimeRecordsTableFilterComposer
+    extends Composer<_$AppDatabase, $TimeRecordsTable> {
+  $$TimeRecordsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get startTime => $composableBuilder(
+    column: $table.startTime,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get endTime => $composableBuilder(
+    column: $table.endTime,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get tags => $composableBuilder(
+    column: $table.tags,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$CategoriesTableFilterComposer get categoryId {
+    final $$CategoriesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.categoryId,
+      referencedTable: $db.categories,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CategoriesTableFilterComposer(
+            $db: $db,
+            $table: $db.categories,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TimeRecordsTableOrderingComposer
+    extends Composer<_$AppDatabase, $TimeRecordsTable> {
+  $$TimeRecordsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get startTime => $composableBuilder(
+    column: $table.startTime,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get endTime => $composableBuilder(
+    column: $table.endTime,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get tags => $composableBuilder(
+    column: $table.tags,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$CategoriesTableOrderingComposer get categoryId {
+    final $$CategoriesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.categoryId,
+      referencedTable: $db.categories,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CategoriesTableOrderingComposer(
+            $db: $db,
+            $table: $db.categories,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TimeRecordsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $TimeRecordsTable> {
+  $$TimeRecordsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get startTime =>
+      $composableBuilder(column: $table.startTime, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get endTime =>
+      $composableBuilder(column: $table.endTime, builder: (column) => column);
+
+  GeneratedColumn<String> get tags =>
+      $composableBuilder(column: $table.tags, builder: (column) => column);
+
+  GeneratedColumn<String> get note =>
+      $composableBuilder(column: $table.note, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  $$CategoriesTableAnnotationComposer get categoryId {
+    final $$CategoriesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.categoryId,
+      referencedTable: $db.categories,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CategoriesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.categories,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TimeRecordsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $TimeRecordsTable,
+          TimeRecord,
+          $$TimeRecordsTableFilterComposer,
+          $$TimeRecordsTableOrderingComposer,
+          $$TimeRecordsTableAnnotationComposer,
+          $$TimeRecordsTableCreateCompanionBuilder,
+          $$TimeRecordsTableUpdateCompanionBuilder,
+          (TimeRecord, $$TimeRecordsTableReferences),
+          TimeRecord,
+          PrefetchHooks Function({bool categoryId})
+        > {
+  $$TimeRecordsTableTableManager(_$AppDatabase db, $TimeRecordsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$TimeRecordsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$TimeRecordsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$TimeRecordsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<DateTime> startTime = const Value.absent(),
+                Value<DateTime?> endTime = const Value.absent(),
+                Value<int?> categoryId = const Value.absent(),
+                Value<String?> tags = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => TimeRecordsCompanion(
+                id: id,
+                name: name,
+                startTime: startTime,
+                endTime: endTime,
+                categoryId: categoryId,
+                tags: tags,
+                note: note,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String name,
+                required DateTime startTime,
+                Value<DateTime?> endTime = const Value.absent(),
+                Value<int?> categoryId = const Value.absent(),
+                Value<String?> tags = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => TimeRecordsCompanion.insert(
+                id: id,
+                name: name,
+                startTime: startTime,
+                endTime: endTime,
+                categoryId: categoryId,
+                tags: tags,
+                note: note,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$TimeRecordsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({categoryId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (categoryId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.categoryId,
+                                referencedTable: $$TimeRecordsTableReferences
+                                    ._categoryIdTable(db),
+                                referencedColumn: $$TimeRecordsTableReferences
+                                    ._categoryIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$TimeRecordsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $TimeRecordsTable,
+      TimeRecord,
+      $$TimeRecordsTableFilterComposer,
+      $$TimeRecordsTableOrderingComposer,
+      $$TimeRecordsTableAnnotationComposer,
+      $$TimeRecordsTableCreateCompanionBuilder,
+      $$TimeRecordsTableUpdateCompanionBuilder,
+      (TimeRecord, $$TimeRecordsTableReferences),
+      TimeRecord,
+      PrefetchHooks Function({bool categoryId})
     >;
 typedef $$EventTemplatesTableCreateCompanionBuilder =
     EventTemplatesCompanion Function({
@@ -1715,6 +2081,34 @@ typedef $$EventTemplatesTableUpdateCompanionBuilder =
       Value<bool> isQuickAccess,
     });
 
+final class $$EventTemplatesTableReferences
+    extends BaseReferences<_$AppDatabase, $EventTemplatesTable, EventTemplate> {
+  $$EventTemplatesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $CategoriesTable _categoryIdTable(_$AppDatabase db) =>
+      db.categories.createAlias(
+        $_aliasNameGenerator(db.eventTemplates.categoryId, db.categories.id),
+      );
+
+  $$CategoriesTableProcessedTableManager? get categoryId {
+    final $_column = $_itemColumn<int>('category_id');
+    if ($_column == null) return null;
+    final manager = $$CategoriesTableTableManager(
+      $_db,
+      $_db.categories,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_categoryIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
 class $$EventTemplatesTableFilterComposer
     extends Composer<_$AppDatabase, $EventTemplatesTable> {
   $$EventTemplatesTableFilterComposer({
@@ -1734,11 +2128,6 @@ class $$EventTemplatesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<int> get categoryId => $composableBuilder(
-    column: $table.categoryId,
-    builder: (column) => ColumnFilters(column),
-  );
-
   ColumnFilters<String> get tags => $composableBuilder(
     column: $table.tags,
     builder: (column) => ColumnFilters(column),
@@ -1753,6 +2142,29 @@ class $$EventTemplatesTableFilterComposer
     column: $table.isQuickAccess,
     builder: (column) => ColumnFilters(column),
   );
+
+  $$CategoriesTableFilterComposer get categoryId {
+    final $$CategoriesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.categoryId,
+      referencedTable: $db.categories,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CategoriesTableFilterComposer(
+            $db: $db,
+            $table: $db.categories,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$EventTemplatesTableOrderingComposer
@@ -1774,11 +2186,6 @@ class $$EventTemplatesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<int> get categoryId => $composableBuilder(
-    column: $table.categoryId,
-    builder: (column) => ColumnOrderings(column),
-  );
-
   ColumnOrderings<String> get tags => $composableBuilder(
     column: $table.tags,
     builder: (column) => ColumnOrderings(column),
@@ -1793,6 +2200,29 @@ class $$EventTemplatesTableOrderingComposer
     column: $table.isQuickAccess,
     builder: (column) => ColumnOrderings(column),
   );
+
+  $$CategoriesTableOrderingComposer get categoryId {
+    final $$CategoriesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.categoryId,
+      referencedTable: $db.categories,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CategoriesTableOrderingComposer(
+            $db: $db,
+            $table: $db.categories,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$EventTemplatesTableAnnotationComposer
@@ -1810,11 +2240,6 @@ class $$EventTemplatesTableAnnotationComposer
   GeneratedColumn<String> get name =>
       $composableBuilder(column: $table.name, builder: (column) => column);
 
-  GeneratedColumn<int> get categoryId => $composableBuilder(
-    column: $table.categoryId,
-    builder: (column) => column,
-  );
-
   GeneratedColumn<String> get tags =>
       $composableBuilder(column: $table.tags, builder: (column) => column);
 
@@ -1825,6 +2250,29 @@ class $$EventTemplatesTableAnnotationComposer
     column: $table.isQuickAccess,
     builder: (column) => column,
   );
+
+  $$CategoriesTableAnnotationComposer get categoryId {
+    final $$CategoriesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.categoryId,
+      referencedTable: $db.categories,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CategoriesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.categories,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$EventTemplatesTableTableManager
@@ -1838,12 +2286,9 @@ class $$EventTemplatesTableTableManager
           $$EventTemplatesTableAnnotationComposer,
           $$EventTemplatesTableCreateCompanionBuilder,
           $$EventTemplatesTableUpdateCompanionBuilder,
-          (
-            EventTemplate,
-            BaseReferences<_$AppDatabase, $EventTemplatesTable, EventTemplate>,
-          ),
+          (EventTemplate, $$EventTemplatesTableReferences),
           EventTemplate,
-          PrefetchHooks Function()
+          PrefetchHooks Function({bool categoryId})
         > {
   $$EventTemplatesTableTableManager(
     _$AppDatabase db,
@@ -1891,9 +2336,55 @@ class $$EventTemplatesTableTableManager
                 isQuickAccess: isQuickAccess,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$EventTemplatesTableReferences(db, table, e),
+                ),
+              )
               .toList(),
-          prefetchHooksCallback: null,
+          prefetchHooksCallback: ({categoryId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (categoryId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.categoryId,
+                                referencedTable: $$EventTemplatesTableReferences
+                                    ._categoryIdTable(db),
+                                referencedColumn:
+                                    $$EventTemplatesTableReferences
+                                        ._categoryIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
         ),
       );
 }
@@ -1908,21 +2399,18 @@ typedef $$EventTemplatesTableProcessedTableManager =
       $$EventTemplatesTableAnnotationComposer,
       $$EventTemplatesTableCreateCompanionBuilder,
       $$EventTemplatesTableUpdateCompanionBuilder,
-      (
-        EventTemplate,
-        BaseReferences<_$AppDatabase, $EventTemplatesTable, EventTemplate>,
-      ),
+      (EventTemplate, $$EventTemplatesTableReferences),
       EventTemplate,
-      PrefetchHooks Function()
+      PrefetchHooks Function({bool categoryId})
     >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
   $AppDatabaseManager(this._db);
-  $$TimeRecordsTableTableManager get timeRecords =>
-      $$TimeRecordsTableTableManager(_db, _db.timeRecords);
   $$CategoriesTableTableManager get categories =>
       $$CategoriesTableTableManager(_db, _db.categories);
+  $$TimeRecordsTableTableManager get timeRecords =>
+      $$TimeRecordsTableTableManager(_db, _db.timeRecords);
   $$EventTemplatesTableTableManager get eventTemplates =>
       $$EventTemplatesTableTableManager(_db, _db.eventTemplates);
 }

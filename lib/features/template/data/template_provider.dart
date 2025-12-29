@@ -1,21 +1,29 @@
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/database/database.dart';
+import '../../../core/database/database_provider.dart';
 
 // 全部模板
 final templatesProvider = StreamProvider<List<EventTemplate>>((ref) {
-  return AppDatabase.instance.watchAllTemplates();
+  final db = ref.watch(databaseProvider);
+  return db.watchAllTemplates();
 });
 
 // 快捷启动模板
 final quickAccessTemplatesProvider = StreamProvider<List<EventTemplate>>((ref) {
-  return AppDatabase.instance.watchQuickAccessTemplates();
+  final db = ref.watch(databaseProvider);
+  return db.watchQuickAccessTemplates();
 });
 
-final templateServiceProvider = Provider((ref) => TemplateService());
+final templateServiceProvider = Provider((ref) {
+  final db = ref.watch(databaseProvider);
+  return TemplateService(db);
+});
 
 class TemplateService {
-  final _db = AppDatabase.instance;
+  final AppDatabase _db;
+
+  TemplateService(this._db);
 
   Future<int> addTemplate({
     required String name,

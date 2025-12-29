@@ -1,15 +1,22 @@
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/database/database.dart';
+import '../../../core/database/database_provider.dart';
 
 final categoriesProvider = StreamProvider<List<Category>>((ref) {
-  return AppDatabase.instance.watchAllCategories();
+  final db = ref.watch(databaseProvider);
+  return db.watchAllCategories();
 });
 
-final categoryServiceProvider = Provider((ref) => CategoryService());
+final categoryServiceProvider = Provider((ref) {
+  final db = ref.watch(databaseProvider);
+  return CategoryService(db);
+});
 
 class CategoryService {
-  final _db = AppDatabase.instance;
+  final AppDatabase _db;
+
+  CategoryService(this._db);
 
   Future<int> addCategory({
     required String name,

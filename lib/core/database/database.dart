@@ -8,12 +8,14 @@ import 'package:path/path.dart' as p;
 part 'database.g.dart';
 
 // 时间记录表
+@TableIndex(name: 'idx_time_records_start_time', columns: {#startTime})
+@TableIndex(name: 'idx_time_records_end_time', columns: {#endTime})
 class TimeRecords extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get name => text()();
   DateTimeColumn get startTime => dateTime()();
   DateTimeColumn get endTime => dateTime().nullable()();
-  IntColumn get categoryId => integer().nullable()();
+  IntColumn get categoryId => integer().nullable().references(Categories, #id, onDelete: KeyAction.setNull)();
   TextColumn get tags => text().nullable()();
   TextColumn get note => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
@@ -29,10 +31,11 @@ class Categories extends Table {
 }
 
 // 事件模板表
+@TableIndex(name: 'idx_event_templates_quick_access', columns: {#isQuickAccess})
 class EventTemplates extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get name => text()();
-  IntColumn get categoryId => integer().nullable()();
+  IntColumn get categoryId => integer().nullable().references(Categories, #id, onDelete: KeyAction.setNull)();
   TextColumn get tags => text().nullable()();
   IntColumn get sortOrder => integer().withDefault(const Constant(0))();
   // 是否在快捷启动中显示
@@ -41,12 +44,16 @@ class EventTemplates extends Table {
 
 @DriftDatabase(tables: [TimeRecords, Categories, EventTemplates])
 class AppDatabase extends _$AppDatabase {
-  AppDatabase._() : super(_openConnection());
+  AppDatabase() : super(_openConnection());
+  
+  // 用于测试的构造函数
+  AppDatabase.forTesting(super.e);
 
-  static final AppDatabase instance = AppDatabase._();
+  // 保留静态单例用于兼容（逐步迁移后可移除）
+  static final AppDatabase instance = AppDatabase();
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -55,6 +62,15 @@ class AppDatabase extends _$AppDatabase {
           if (from < 2) {
             // 添加 isQuickAccess 字段
             await m.addColumn(eventTemplates, eventTemplates.isQuickAccess);
+          }
+          if (from < 3) {
+            // 添加索引
+            await m.createIndex(Index('idx_time_records_start_time', 
+              'CREATE INDEX idx_time_records_start_time ON time_records (start_time)'));
+            await m.createIndex(Index('idx_time_records_end_time', 
+              'CREATE INDEX idx_time_records_end_time ON time_records (end_time)'));
+            await m.createIndex(Index('idx_event_templates_quick_access', 
+              'CREATE INDEX idx_event_templates_quick_access ON event_templates (is_quick_access)'));
           }
         },
       );

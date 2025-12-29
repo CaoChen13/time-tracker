@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
 import '../data/time_record_provider.dart';
 import '../../category/data/category_provider.dart';
 import '../../../core/database/database.dart';
@@ -21,6 +20,8 @@ class _RecordListState extends ConsumerState<RecordList>
   Widget build(BuildContext context) {
     final recordsAsync = ref.watch(recordsByDateProvider);
     final categoriesAsync = ref.watch(categoriesProvider);
+    final activeRecordAsync = ref.watch(activeRecordProvider);
+    final activeRecord = activeRecordAsync.valueOrNull;
 
     return recordsAsync.when(
       data: (records) {
@@ -53,9 +54,15 @@ class _RecordListState extends ConsumerState<RecordList>
                           final category = record.categoryId != null
                               ? categoryMap[record.categoryId]
                               : null;
+                          // 判断当前这个卡片对应的事件是否正在计时
+                          final isThisRunning = activeRecord != null &&
+                              activeRecord.name == record.name &&
+                              activeRecord.categoryId == record.categoryId;
                           return _RecordCard(
                             record: record,
                             category: category,
+                            activeRecord: activeRecord,
+                            isThisRunning: isThisRunning,
                           );
                         },
                       );
@@ -111,8 +118,15 @@ class _EmptyState extends StatelessWidget {
 class _RecordCard extends ConsumerWidget {
   final TimeRecord record;
   final Category? category;
+  final TimeRecord? activeRecord;
+  final bool isThisRunning;
 
-  const _RecordCard({required this.record, this.category});
+  const _RecordCard({
+    required this.record,
+    this.category,
+    this.activeRecord,
+    required this.isThisRunning,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -120,14 +134,6 @@ class _RecordCard extends ConsumerWidget {
     final categoryColor =
         category != null ? _parseColor(category!.color) : const Color(0xFF8B5CF6);
     final textTheme = Theme.of(context).textTheme;
-    
-    // 监听当前计时中的任务
-    final activeRecordAsync = ref.watch(activeRecordProvider);
-    final activeRecord = activeRecordAsync.valueOrNull;
-    // 判断当前这个卡片对应的事件是否正在计时（通过名称和分类匹配）
-    final isThisRunning = activeRecord != null &&
-        activeRecord.name == record.name &&
-        activeRecord.categoryId == record.categoryId;
 
     return Slidable(
       key: ValueKey(record.id),

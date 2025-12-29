@@ -49,6 +49,7 @@ class TemplateList extends ConsumerWidget {
                   category: category,
                   isThisRunning: isThisRunning,
                   hasActiveTimer: activeRecord != null,
+                  activeStartTime: isThisRunning ? activeRecord.startTime : null,
                 );
               },
             );
@@ -103,12 +104,14 @@ class _TemplateCard extends ConsumerWidget {
   final Category? category;
   final bool isThisRunning;
   final bool hasActiveTimer;
+  final DateTime? activeStartTime;
 
   const _TemplateCard({
     required this.template,
     this.category,
     required this.isThisRunning,
     required this.hasActiveTimer,
+    this.activeStartTime,
   });
 
   @override
@@ -116,11 +119,6 @@ class _TemplateCard extends ConsumerWidget {
     final categoryColor = category != null
         ? _parseColor(category!.color)
         : const Color(0xFF8B5CF6);
-
-    // 获取当前计时的开始时间
-    final activeRecordAsync = ref.watch(activeRecordProvider);
-    final activeRecord = activeRecordAsync.valueOrNull;
-    final startTime = isThisRunning ? activeRecord?.startTime : null;
 
     return Container(
       height: 72,
@@ -165,8 +163,8 @@ class _TemplateCard extends ConsumerWidget {
                 ),
                 const SizedBox(height: 4),
                 // 计时显示或分类标签
-                if (isThisRunning && startTime != null)
-                  _TimerDisplay(startTime: startTime)
+                if (isThisRunning && activeStartTime != null)
+                  _TimerDisplay(startTime: activeStartTime!)
                 else if (category != null)
                   _TagChip(text: category!.name, color: categoryColor),
               ],
