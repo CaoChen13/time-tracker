@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../template/data/template_provider.dart';
-import '../../template/presentation/template_edit_dialog.dart';
+import '../../template/presentation/template_edit_sheet.dart';
 import '../../category/data/category_provider.dart';
+import '../../category/presentation/category_edit_sheet.dart';
 import '../../../core/database/database.dart';
 import '../../../core/widgets/icon_picker.dart';
+import '../../../core/widgets/pressable.dart';
 import 'timer_card.dart';
 import 'template_list.dart';
 
@@ -13,24 +16,26 @@ class RecordTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFF),
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Task 标题栏
             const _TaskHeader(),
-            // 计时器卡片
+            // 计时器卡片（计划外事件）
             const TimerCard(),
-            const SizedBox(height: 12),
-            // 常用模板
+            const SizedBox(height: 16),
+            // 快捷启动标题
+            const _TodayHeader(),
+            // 快捷启动列表（放中间）
+            const Expanded(child: TemplateList()),
+            // 事件库（放底部）
             const _QuickTemplates(),
             const SizedBox(height: 8),
-            // Today 标题
-            const _TodayHeader(),
-            // 模板列表（快捷启动）
-            const Expanded(child: TemplateList()),
           ],
         ),
       ),
@@ -45,6 +50,7 @@ class _TaskHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
@@ -56,17 +62,17 @@ class _TaskHeader extends StatelessWidget {
             style: textTheme.headlineSmall?.copyWith(
               fontSize: 24,
               fontWeight: FontWeight.w500,
-              color: const Color(0xFF070417),
+              color: isDark ? Colors.white : AppColors.textPrimary,
             ),
           ),
           GestureDetector(
             onTap: () {
               // TODO: 更多菜单
             },
-            child: const Icon(
+            child: Icon(
               Icons.more_horiz,
               size: 24,
-              color: Color(0xFF828282),
+              color: isDark ? Colors.grey.shade400 : AppColors.textSecondary,
             ),
           ),
         ],
@@ -82,6 +88,7 @@ class _TodayHeader extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final textTheme = Theme.of(context).textTheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
@@ -93,34 +100,31 @@ class _TodayHeader extends ConsumerWidget {
             style: textTheme.titleMedium?.copyWith(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: const Color(0xFF070417),
+              color: isDark ? Colors.white : AppColors.textPrimary,
             ),
           ),
           GestureDetector(
             onTap: () {
               // 添加新模板
-              showDialog(
-                context: context,
-                builder: (context) => const TemplateEditDialog(),
-              );
+              showTemplateEditSheet(context);
             },
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: const Color(0xFF8B5CF6).withOpacity(0.1),
+                color: AppColors.primary.withOpacity(isDark ? 0.2 : 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.add, size: 16, color: Color(0xFF8B5CF6)),
+                  const Icon(Icons.add, size: 16, color: AppColors.primary),
                   const SizedBox(width: 4),
                   Text(
                     '添加',
                     style: textTheme.bodyMedium?.copyWith(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
-                      color: const Color(0xFF8B5CF6),
+                      color: AppColors.primary,
                     ),
                   ),
                 ],
@@ -135,7 +139,7 @@ class _TodayHeader extends ConsumerWidget {
 
 
 
-// 事件库横条 - 可展开显示全部事件
+// 事件库 - 底部 Bento Grid 样式
 class _QuickTemplates extends ConsumerStatefulWidget {
   const _QuickTemplates();
 
@@ -145,39 +149,36 @@ class _QuickTemplates extends ConsumerStatefulWidget {
 
 class _QuickTemplatesState extends ConsumerState<_QuickTemplates> {
   bool _isExpanded = false;
+  bool _isEditMode = false;
 
   @override
   Widget build(BuildContext context) {
     final templatesAsync = ref.watch(templatesProvider);
     final categoriesAsync = ref.watch(categoriesProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return templatesAsync.when(
       data: (templates) {
         if (templates.isEmpty) {
           return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: GestureDetector(
-              onTap: () {
-                showDialog(
-                  context: context,
-                  builder: (context) => const TemplateEditDialog(),
-                );
-              },
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: Pressable(
+              onTap: () => showTemplateEditSheet(context),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: isDark ? const Color(0xFF1F2937) : Colors.white,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.shade200),
+                  border: Border.all(color: isDark ? Colors.grey.shade700 : const Color(0xFFE5E5E5)),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.add, size: 18, color: Colors.grey.shade500),
+                    Icon(Icons.add, size: 18, color: isDark ? Colors.grey.shade400 : Colors.grey.shade500),
                     const SizedBox(width: 8),
                     Text(
                       '添加事件到事件库',
-                      style: TextStyle(color: Colors.grey.shade500, fontSize: 14),
+                      style: TextStyle(color: isDark ? Colors.grey.shade400 : Colors.grey.shade500, fontSize: 14),
                     ),
                   ],
                 ),
@@ -191,7 +192,7 @@ class _QuickTemplatesState extends ConsumerState<_QuickTemplates> {
             final categoryMap = {for (var c in categories) c.id: c};
 
             return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -199,7 +200,7 @@ class _QuickTemplatesState extends ConsumerState<_QuickTemplates> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      GestureDetector(
+                      Pressable(
                         onTap: () => setState(() => _isExpanded = !_isExpanded),
                         child: Row(
                           children: [
@@ -208,54 +209,51 @@ class _QuickTemplatesState extends ConsumerState<_QuickTemplates> {
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
-                                color: Colors.grey.shade700,
+                                color: isDark ? Colors.grey.shade300 : Colors.grey.shade700,
                               ),
                             ),
                             const SizedBox(width: 4),
                             Icon(
                               _isExpanded ? Icons.expand_less : Icons.expand_more,
                               size: 18,
-                              color: Colors.grey.shade600,
+                              color: isDark ? Colors.grey.shade400 : Colors.grey.shade500,
                             ),
                           ],
                         ),
                       ),
-                      GestureDetector(
-                        onTap: () {
-                          showDialog(
-                            context: context,
-                            builder: (context) => const TemplateEditDialog(),
-                          );
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF8B5CF6).withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.add, size: 14, color: Color(0xFF8B5CF6)),
-                              SizedBox(width: 2),
-                              Text(
-                                '新建',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                  color: Color(0xFF8B5CF6),
-                                ),
+                      Row(
+                        children: [
+                          Pressable(
+                            onTap: () => setState(() => _isEditMode = !_isEditMode),
+                            child: Text(
+                              _isEditMode ? '完成' : '编辑',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w400,
+                                color: _isEditMode ? AppColors.error : (isDark ? Colors.grey.shade400 : Colors.grey.shade500),
                               ),
-                            ],
+                            ),
                           ),
-                        ),
+                          const SizedBox(width: 16),
+                          Pressable(
+                            onTap: () => showTemplateEditSheet(context),
+                            child: Text(
+                              '新建',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w400,
+                                color: isDark ? Colors.grey.shade400 : Colors.grey.shade500,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  // 事件列表
+                  const SizedBox(height: 12),
+                  // Bento Grid 内容
                   if (_isExpanded)
-                    _buildExpandedList(templates, categoryMap)
+                    _buildExpandedGrid(templates, categoryMap)
                   else
                     _buildCollapsedRow(templates, categoryMap),
                 ],
@@ -280,119 +278,148 @@ class _QuickTemplatesState extends ConsumerState<_QuickTemplates> {
       child: Row(
         children: templates.map((t) {
           final category = t.categoryId != null ? categoryMap[t.categoryId] : null;
-          return _TemplateChip(
+          return _TemplateTile(
             template: t,
             category: category,
+            isEditMode: _isEditMode,
             onTap: () => _addToQuickAccess(t),
             onLongPress: () => _confirmDelete(t),
+            onDelete: () => _deleteTemplate(t),
           );
         }).toList(),
       ),
     );
   }
 
-  Widget _buildExpandedList(
+  Widget _buildExpandedGrid(
     List<EventTemplate> templates,
     Map<int, Category> categoryMap,
   ) {
     return Wrap(
-      spacing: 8,
-      runSpacing: 8,
+      spacing: 10,
+      runSpacing: 10,
       children: templates.map((t) {
         final category = t.categoryId != null ? categoryMap[t.categoryId] : null;
-        return _TemplateChip(
+        return _TemplateTile(
           template: t,
           category: category,
+          isEditMode: _isEditMode,
           onTap: () => _addToQuickAccess(t),
           onLongPress: () => _confirmDelete(t),
+          onDelete: () => _deleteTemplate(t),
         );
       }).toList(),
     );
   }
 
-  // 只添加到快捷启动（如果已经在了就不操作）
   void _addToQuickAccess(EventTemplate template) {
     if (!template.isQuickAccess) {
       ref.read(templateServiceProvider).setQuickAccess(template.id, true);
     }
   }
 
+  void _deleteTemplate(EventTemplate template) {
+    ref.read(templateServiceProvider).deleteTemplate(template.id);
+  }
+
   void _confirmDelete(EventTemplate template) {
-    showDialog(
+    showDeleteConfirmSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('确认删除'),
-        content: Text('确定要删除"${template.name}"吗？'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('取消'),
-          ),
-          TextButton(
-            onPressed: () {
-              ref.read(templateServiceProvider).deleteTemplate(template.id);
-              Navigator.pop(context);
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('删除'),
-          ),
-        ],
-      ),
+      message: '确定要删除「${template.name}」吗？',
+      onConfirm: () {
+        ref.read(templateServiceProvider).deleteTemplate(template.id);
+      },
     );
   }
 }
 
-class _TemplateChip extends StatelessWidget {
+// Bento 方块卡片（小尺寸 64x52）
+class _TemplateTile extends StatelessWidget {
   final EventTemplate template;
   final Category? category;
+  final bool isEditMode;
   final VoidCallback onTap;
   final VoidCallback onLongPress;
+  final VoidCallback onDelete;
 
-  const _TemplateChip({
+  const _TemplateTile({
     required this.template,
     this.category,
+    required this.isEditMode,
     required this.onTap,
     required this.onLongPress,
+    required this.onDelete,
   });
 
   @override
   Widget build(BuildContext context) {
     final color = category != null
         ? Color(int.parse(category!.color.replaceFirst('#', '0xFF')))
-        : const Color(0xFF8B5CF6);
+        : AppColors.primary;
 
-    return GestureDetector(
-      onTap: onTap,
-      onLongPress: onLongPress,
-      child: Container(
-        margin: const EdgeInsets.only(right: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              category?.icon != null
-                  ? getIconByName(category!.icon)
-                  : Icons.bookmark_outline,
-              size: 16,
-              color: color,
-            ),
-            const SizedBox(width: 6),
-            Text(
-              template.name,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: color,
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Pressable(
+          onTap: isEditMode ? null : onTap,
+          child: GestureDetector(
+            onLongPress: isEditMode ? null : onLongPress,
+            child: Container(
+              width: 64,
+              height: 52,
+              margin: const EdgeInsets.only(right: 2, top: 4),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  IconDisplay(icon: template.icon, size: 20),
+                  const SizedBox(height: 4),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: Text(
+                      template.name,
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w500,
+                        color: color,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
+          ),
         ),
-      ),
+        // 编辑模式删除按钮
+        if (isEditMode)
+          Positioned(
+            top: 0,
+            right: -2,
+            child: Pressable(
+              onTap: onDelete,
+              scaleFactor: 0.9,
+              child: Container(
+                width: 18,
+                height: 18,
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.5),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.close,
+                  size: 12,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

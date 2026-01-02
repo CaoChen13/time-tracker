@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../time_record/presentation/record_tab.dart';
-import '../../time_record/presentation/add_record_sheet.dart';
+import '../../statistics/presentation/statistics_tab.dart';
+import '../../profile/presentation/profile_tab.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/pressable.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -19,10 +22,11 @@ class _HomeScreenState extends State<HomeScreen> {
         index: _currentIndex,
         children: const [
           RecordTab(),
-          _StatisticsTab(),
+          StatisticsTab(),
+          ProfileTab(),
         ],
       ),
-      bottomNavigationBar: _TimePadBottomBar(
+      bottomNavigationBar: _BottomNavBar(
         currentIndex: _currentIndex,
         onTap: (index) {
           setState(() {
@@ -34,111 +38,96 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-// 统计页面（待实现）
-class _StatisticsTab extends StatelessWidget {
-  const _StatisticsTab();
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.pie_chart_outline,
-                size: 64,
-                color: theme.colorScheme.outline.withOpacity(0.5),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                '统计功能开发中',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: theme.colorScheme.outline,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// TimePad 风格底部导航栏
-class _TimePadBottomBar extends StatelessWidget {
+// 底部导航栏
+class _BottomNavBar extends StatelessWidget {
   final int currentIndex;
   final Function(int) onTap;
 
-  const _TimePadBottomBar({
+  const _BottomNavBar({
     required this.currentIndex,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     return Container(
       height: 76,
       padding: const EdgeInsets.symmetric(horizontal: 40),
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1F2937) : Colors.white,
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // 左侧：时钟图标
-          GestureDetector(
+          // 计时
+          _NavItem(
+            icon: Icons.access_time_outlined,
+            isSelected: currentIndex == 0,
             onTap: () => onTap(0),
-            child: Opacity(
-              opacity: currentIndex == 0 ? 1.0 : 0.4,
-              child: const Icon(
-                Icons.access_time_outlined,
-                size: 28,
-                color: Color(0xFF000000),
-              ),
-            ),
+            isDark: isDark,
           ),
-          // 中间：添加按钮
-          GestureDetector(
-            onTap: () {
-              // 弹出添加记录
-              showModalBottomSheet(
-                context: context,
-                isScrollControlled: true,
-                backgroundColor: Colors.transparent,
-                builder: (context) => const AddRecordSheet(),
-              );
-            },
-            child: Container(
-              width: 44,
-              height: 44,
-              decoration: const BoxDecoration(
-                color: Color(0xFF070417),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.add,
-                size: 24,
-                color: Colors.white,
-              ),
-            ),
-          ),
-          // 右侧：历史图标（空心时钟）
-          GestureDetector(
+          // 统计
+          _NavItem(
+            icon: Icons.pie_chart_outline,
+            isSelected: currentIndex == 1,
             onTap: () => onTap(1),
-            child: Opacity(
-              opacity: currentIndex == 1 ? 1.0 : 0.4,
-              child: const Icon(
-                Icons.access_time_outlined,
-                size: 28,
-                color: Color(0xFF000000),
-              ),
-            ),
+            isDark: isDark,
+          ),
+          // 我的
+          _NavItem(
+            icon: Icons.person_outline,
+            isSelected: currentIndex == 2,
+            onTap: () => onTap(2),
+            isDark: isDark,
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _NavItem extends StatelessWidget {
+  final IconData icon;
+  final bool isSelected;
+  final VoidCallback onTap;
+  final bool isDark;
+
+  const _NavItem({
+    required this.icon,
+    required this.isSelected,
+    required this.onTap,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Pressable(
+      onTap: onTap,
+      scaleFactor: 0.9,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected 
+              ? AppColors.primary.withOpacity(isDark ? 0.2 : 0.12) 
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: AnimatedOpacity(
+          duration: const Duration(milliseconds: 200),
+          opacity: isSelected ? 1.0 : 0.4,
+          child: Icon(
+            icon,
+            size: 28,
+            color: isSelected 
+                ? AppColors.primary 
+                : (isDark ? Colors.white : const Color(0xFF000000)),
+          ),
+        ),
       ),
     );
   }

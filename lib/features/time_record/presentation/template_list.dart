@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../core/theme/app_theme.dart';
 import '../data/time_record_provider.dart';
 import '../../template/data/template_provider.dart';
+import '../../template/presentation/template_edit_sheet.dart';
 import '../../category/data/category_provider.dart';
+import '../../statistics/data/statistics_provider.dart';
 import '../../../core/database/database.dart';
 import '../../../core/widgets/icon_picker.dart';
+import '../../../core/widgets/pressable.dart';
 
 /// 首页模板列表 - 只显示快捷启动的模板
 class TemplateList extends ConsumerWidget {
@@ -98,8 +102,8 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-/// 模板卡片 - 简洁单行样式，右边两个圆形按钮
-class _TemplateCard extends ConsumerWidget {
+/// 模板卡片 - 左滑删除，右侧播放按钮
+class _TemplateCard extends ConsumerStatefulWidget {
   final EventTemplate template;
   final Category? category;
   final bool isThisRunning;
@@ -115,152 +119,237 @@ class _TemplateCard extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final categoryColor = category != null
-        ? _parseColor(category!.color)
-        : const Color(0xFF8B5CF6);
+  ConsumerState<_TemplateCard> createState() => _TemplateCardState();
+}
 
-    return Container(
+class _TemplateCardState extends ConsumerState<_TemplateCard> {
+  double _dragExtent = 0;
+  static const double _actionWidth = 80;
+  bool _isPlayPressed = false;
+
+  void _handleDragUpdate(DragUpdateDetails details) {
+    setState(() {
+      _dragExtent += details.delta.dx;
+      // 只允许左滑
+      _dragExtent = _dragExtent.clamp(-_actionWidth, 0.0);
+    });
+  }
+
+  void _handleDragEnd(DragEndDetails details) {
+    if (_dragExtent < -_actionWidth / 2) {
+      setState(() => _dragExtent = -_actionWidth);
+    } else {
+      setState(() => _dragExtent = 0);
+    }
+  }
+
+  void _resetPosition() {
+    setState(() => _dragExtent = 0);
+  }
+
+  void _handleDelete() {
+    // 如果正在计时，先停止
+    if (widget.isThisRunning) {
+      ref.read(timeRecordServiceProvider).stopTimer();
+      ref.read(statisticsRefreshProvider.notifier).state++;
+    }
+    // 从快捷启动移除
+    ref.read(templateServiceProvider).setQuickAccess(widget.template.id, false);
+  }
+
+  void _handlePlayPause() {
+    if (widget.isThisRunning) {
+      ref.read(timeRecordServiceProvider).stopTimer();
+      ref.read(statisticsRefreshProvider.notifier).state++;
+    } else if (widget.hasActiveTimer) {
+      ref.read(timeRecordServiceProvider).stopTimer();
+      ref.read(statisticsRefreshProvider.notifier).state++;
+      ref.read(timeRecordServiceProvider).startTimer(
+            name: widget.template.name,
+            categoryId: widget.template.categoryId,
+            icon: widget.template.icon,
+            source: 'quickAccess',
+          );
+    } else {
+      ref.read(timeRecordServiceProvider).startTimer(
+            name: widget.template.name,
+            categoryId: widget.template.categoryId,
+            icon: widget.template.icon,
+            source: 'quickAccess',
+          );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final categoryColor = widget.category != null 
+        ? _parseColor(widget.category!.color) 
+        : AppColors.primary;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBg = isDark ? const Color(0xFF1F2937) : Colors.white;
+    final textColor = isDark ? Colors.white : const Color(0xFF1E293B);
+    final playBtnBg = isDark ? const Color(0xFF374151) : const Color(0xFFF3F4F6);
+    final playBtnIconColor = isDark ? Colors.grey.shade400 : const Color(0xFF9CA3AF);
+
+    return SizedBox(
       height: 72,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
+      child: Stack(
         children: [
-          // 左侧圆形图标
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: categoryColor,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              category?.icon != null
-                  ? getIconByName(category!.icon)
-                  : Icons.bookmark_outline,
-              size: 22,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(width: 12),
-          // 中间内容
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  template.name,
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: const Color(0xFF000000),
+          // 右侧背景 - 红色删除按钮（只在滑动时显示）
+          if (_dragExtent < 0)
+            Positioned(
+              right: 0,
+              top: 0,
+              bottom: 0,
+              width: _actionWidth,
+              child: GestureDetector(
+                onTap: _handleDelete,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF43F5E),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                // 计时显示或分类标签
-                if (isThisRunning && activeStartTime != null)
-                  _TimerDisplay(startTime: activeStartTime!)
-                else if (category != null)
-                  _TagChip(text: category!.name, color: categoryColor),
-              ],
-            ),
-          ),
-          // 右侧按钮
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // 播放/暂停按钮
-              GestureDetector(
-                onTap: () => _handlePlayPause(ref),
-                child: Icon(
-                  isThisRunning ? Icons.pause_circle_filled : Icons.play_circle_outline,
-                  size: 32,
-                  color: isThisRunning
-                      ? const Color(0xFF8B5CF6)
-                      : const Color(0xFF828282),
-                ),
-              ),
-              const SizedBox(width: 8),
-              // 终止按钮 - 使用 Container 绘制圆环以匹配播放按钮大小
-              GestureDetector(
-                onTap: () => _handleRemove(ref),
-                child: SizedBox(
-                  width: 32,
-                  height: 32,
-                  child: Stack(
-                    alignment: Alignment.center,
+                  alignment: Alignment.center,
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // 圆环边框
-                      Container(
-                        width: 28,
-                        height: 28,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: const Color(0xFF828282),
-                            width: 2,
-                          ),
-                        ),
-                      ),
-                      // 红色方块
-                      Container(
-                        width: 10,
-                        height: 10,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFEF4444),
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
+                      Icon(Icons.delete_outline, color: Colors.white, size: 20),
+                      SizedBox(width: 4),
+                      Text('删除', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
                     ],
                   ),
                 ),
               ),
-            ],
+            ),
+          // 前景卡片
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 150),
+            curve: Curves.easeOutCubic,
+            left: _dragExtent,
+            right: -_dragExtent,
+            top: 0,
+            bottom: 0,
+            child: GestureDetector(
+              onHorizontalDragUpdate: _handleDragUpdate,
+              onHorizontalDragEnd: _handleDragEnd,
+              onTap: () {
+                if (_dragExtent != 0) {
+                  _resetPosition();
+                } else {
+                  showTemplateEditSheet(context, template: widget.template);
+                }
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color: cardBg,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    // 左侧图标
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: categoryColor.withOpacity(isDark ? 0.2 : 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Center(
+                        child: IconDisplay(icon: widget.template.icon, size: 28),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    // 中间内容
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.template.name,
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: textColor,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2),
+                          // 计时显示或分类标签
+                          AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 200),
+                            child: widget.isThisRunning && widget.activeStartTime != null
+                                ? _TimerDisplay(key: const ValueKey('timer'), startTime: widget.activeStartTime!)
+                                : widget.category != null
+                                    ? Text(
+                                        widget.category!.name,
+                                        key: ValueKey('cat_${widget.category!.id}'),
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: categoryColor,
+                                        ),
+                                      )
+                                    : const SizedBox.shrink(key: ValueKey('empty')),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // 播放按钮 - 带缩放动画
+                    GestureDetector(
+                      onTapDown: (_) => setState(() => _isPlayPressed = true),
+                      onTapUp: (_) {
+                        setState(() => _isPlayPressed = false);
+                        _handlePlayPause();
+                      },
+                      onTapCancel: () => setState(() => _isPlayPressed = false),
+                      child: AnimatedScale(
+                        scale: _isPlayPressed ? 0.9 : 1.0,
+                        duration: const Duration(milliseconds: 100),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 100),
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: widget.isThisRunning || _isPlayPressed
+                                ? AppColors.primary
+                                : playBtnBg,
+                            shape: BoxShape.circle,
+                            boxShadow: widget.isThisRunning || _isPlayPressed
+                                ? [
+                                    BoxShadow(
+                                      color: AppColors.primary.withOpacity(0.3),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ]
+                                : null,
+                          ),
+                          child: Icon(
+                            widget.isThisRunning ? Icons.pause : Icons.play_arrow,
+                            size: 20,
+                            color: widget.isThisRunning || _isPlayPressed
+                                ? Colors.white
+                                : playBtnIconColor,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  void _handlePlayPause(WidgetRef ref) {
-    if (isThisRunning) {
-      // 暂停：停止计时并保存记录
-      ref.read(timeRecordServiceProvider).stopTimer();
-    } else if (hasActiveTimer) {
-      // 有其他事件在计时，先停止再开始这个
-      ref.read(timeRecordServiceProvider).stopTimer();
-      ref.read(timeRecordServiceProvider).startTimer(
-            name: template.name,
-            categoryId: template.categoryId,
-          );
-    } else {
-      // 开始计时
-      ref.read(timeRecordServiceProvider).startTimer(
-            name: template.name,
-            categoryId: template.categoryId,
-          );
-    }
-  }
-
-  void _handleRemove(WidgetRef ref) {
-    // 如果正在计时，先停止
-    if (isThisRunning) {
-      ref.read(timeRecordServiceProvider).stopTimer();
-    }
-    // 从快捷启动移除
-    ref.read(templateServiceProvider).setQuickAccess(template.id, false);
-  }
-
   Color _parseColor(String hex) {
     try {
       return Color(int.parse(hex.replaceFirst('#', '0xFF')));
     } catch (_) {
-      return const Color(0xFF8B5CF6);
+      return AppColors.primary;
     }
   }
 }
@@ -269,7 +358,7 @@ class _TemplateCard extends ConsumerWidget {
 class _TimerDisplay extends StatelessWidget {
   final DateTime startTime;
 
-  const _TimerDisplay({required this.startTime});
+  const _TimerDisplay({super.key, required this.startTime});
 
   @override
   Widget build(BuildContext context) {
@@ -286,36 +375,10 @@ class _TimerDisplay extends StatelessWidget {
           style: GoogleFonts.poppins(
             fontSize: 12,
             fontWeight: FontWeight.w600,
-            color: const Color(0xFF8B5CF6),
+            color: AppColors.primary,
           ),
         );
       },
-    );
-  }
-}
-
-class _TagChip extends StatelessWidget {
-  final String text;
-  final Color color;
-
-  const _TagChip({required this.text, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Text(
-        text,
-        style: GoogleFonts.poppins(
-          fontSize: 11,
-          fontWeight: FontWeight.w400,
-          color: color,
-        ),
-      ),
     );
   }
 }

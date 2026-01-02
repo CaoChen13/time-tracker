@@ -16,8 +16,10 @@ class TimeRecords extends Table {
   DateTimeColumn get startTime => dateTime()();
   DateTimeColumn get endTime => dateTime().nullable()();
   IntColumn get categoryId => integer().nullable().references(Categories, #id, onDelete: KeyAction.setNull)();
+  TextColumn get icon => text().nullable()();  // 事件图标
   TextColumn get tags => text().nullable()();
   TextColumn get note => text().nullable()();
+  TextColumn get source => text().withDefault(const Constant('timerCard'))();  // 来源: timerCard 或 quickAccess
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 
@@ -28,6 +30,10 @@ class Categories extends Table {
   TextColumn get color => text()();
   TextColumn get icon => text().nullable()();
   IntColumn get sortOrder => integer().withDefault(const Constant(0))();
+  IntColumn get usageCount => integer().withDefault(const Constant(0))();
+  IntColumn get dailyGoalMinutes => integer().nullable()();  // 每日目标（分钟）
+  BoolColumn get showInTimerCard => boolean().withDefault(const Constant(false))();  // 是否显示在首页TimerCard
+  BoolColumn get isDefaultForTimerCard => boolean().withDefault(const Constant(false))();  // 是否为TimerCard默认分类
 }
 
 // 事件模板表
@@ -36,13 +42,21 @@ class EventTemplates extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get name => text()();
   IntColumn get categoryId => integer().nullable().references(Categories, #id, onDelete: KeyAction.setNull)();
+  TextColumn get icon => text().nullable()();  // 模板图标
   TextColumn get tags => text().nullable()();
   IntColumn get sortOrder => integer().withDefault(const Constant(0))();
   // 是否在快捷启动中显示
   BoolColumn get isQuickAccess => boolean().withDefault(const Constant(false))();
 }
 
-@DriftDatabase(tables: [TimeRecords, Categories, EventTemplates])
+// 应用设置表
+class AppSettings extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get key => text().unique()();
+  TextColumn get value => text()();
+}
+
+@DriftDatabase(tables: [TimeRecords, Categories, EventTemplates, AppSettings])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
   
@@ -53,24 +67,46 @@ class AppDatabase extends _$AppDatabase {
   static final AppDatabase instance = AppDatabase();
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (Migrator m) => m.createAll(),
         onUpgrade: (Migrator m, int from, int to) async {
           if (from < 2) {
-            // 添加 isQuickAccess 字段
             await m.addColumn(eventTemplates, eventTemplates.isQuickAccess);
           }
           if (from < 3) {
-            // 添加索引
             await m.createIndex(Index('idx_time_records_start_time', 
               'CREATE INDEX idx_time_records_start_time ON time_records (start_time)'));
             await m.createIndex(Index('idx_time_records_end_time', 
               'CREATE INDEX idx_time_records_end_time ON time_records (end_time)'));
             await m.createIndex(Index('idx_event_templates_quick_access', 
               'CREATE INDEX idx_event_templates_quick_access ON event_templates (is_quick_access)'));
+          }
+          if (from < 4) {
+            await m.addColumn(categories, categories.usageCount);
+          }
+          if (from < 5) {
+            await m.createTable(appSettings);
+          }
+          if (from < 6) {
+            await m.addColumn(categories, categories.dailyGoalMinutes);
+          }
+          if (from < 7) {
+            await m.addColumn(timeRecords, timeRecords.icon);
+          }
+          if (from < 8) {
+            await m.addColumn(eventTemplates, eventTemplates.icon);
+          }
+          if (from < 9) {
+            await m.addColumn(categories, categories.showInTimerCard);
+          }
+          if (from < 10) {
+            await m.addColumn(categories, categories.isDefaultForTimerCard);
+          }
+          if (from < 11) {
+            await m.addColumn(timeRecords, timeRecords.source);
           }
         },
       );
@@ -85,6 +121,18 @@ class AppDatabase extends _$AppDatabase {
       (select(categories)..orderBy([(t) => OrderingTerm.asc(t.sortOrder)]))
           .watch();
 
+  // 按使用次数排序（常用分类）
+  Stream<List<Category>> watchCategoriesByUsage() =>
+      (select(categories)..orderBy([(t) => OrderingTerm.desc(t.usageCount)]))
+          .watch();
+
+  // 只获取显示在 TimerCard 的分类
+  Stream<List<Category>> watchTimerCardCategories() =>
+      (select(categories)
+            ..where((t) => t.showInTimerCard.equals(true))
+            ..orderBy([(t) => OrderingTerm.desc(t.usageCount)]))
+          .watch();
+
   Future<List<Category>> getAllCategories() =>
       (select(categories)..orderBy([(t) => OrderingTerm.asc(t.sortOrder)]))
           .get();
@@ -97,6 +145,40 @@ class AppDatabase extends _$AppDatabase {
 
   Future<int> deleteCategory(int id) =>
       (delete(categories)..where((t) => t.id.equals(id))).go();
+
+  // 增加分类使用次数
+  Future<void> incrementCategoryUsage(int categoryId) async {
+    await customStatement(
+      'UPDATE categories SET usage_count = usage_count + 1 WHERE id = ?',
+      [categoryId],
+    );
+  }
+
+  // 设置分类是否显示在 TimerCard
+  Future<void> setCategoryShowInTimerCard(int id, bool value) async {
+    await (update(categories)..where((t) => t.id.equals(id)))
+        .write(CategoriesCompanion(showInTimerCard: Value(value)));
+    // 如果移除，同时取消默认
+    if (!value) {
+      await (update(categories)..where((t) => t.id.equals(id)))
+          .write(const CategoriesCompanion(isDefaultForTimerCard: Value(false)));
+    }
+  }
+
+  // 设置分类为 TimerCard 默认（只能有一个默认）
+  Future<void> setCategoryAsDefaultForTimerCard(int id) async {
+    // 先清除所有默认
+    await customStatement('UPDATE categories SET is_default_for_timer_card = 0');
+    // 设置新的默认
+    await (update(categories)..where((t) => t.id.equals(id)))
+        .write(const CategoriesCompanion(isDefaultForTimerCard: Value(true)));
+  }
+
+  // 获取 TimerCard 默认分类
+  Future<Category?> getDefaultTimerCardCategory() async {
+    return (select(categories)..where((t) => t.isDefaultForTimerCard.equals(true)))
+        .getSingleOrNull();
+  }
 
   // ========== 事件模板操作 ==========
 
@@ -117,6 +199,20 @@ class AppDatabase extends _$AppDatabase {
 
   Future<int> insertTemplate(EventTemplatesCompanion template) =>
       into(eventTemplates).insert(template);
+
+  // 根据名称查找模板（只按名称，不管分类）
+  Future<EventTemplate?> findTemplateByName(String name) =>
+      (select(eventTemplates)..where((t) => t.name.equals(name)))
+          .getSingleOrNull();
+
+  // 根据名称和分类查找模板
+  Future<EventTemplate?> findTemplate(String name, int? categoryId) =>
+      (select(eventTemplates)
+            ..where((t) => t.name.equals(name))
+            ..where((t) => categoryId != null 
+                ? t.categoryId.equals(categoryId) 
+                : t.categoryId.isNull()))
+          .getSingleOrNull();
 
   Future<bool> updateTemplate(EventTemplate template) =>
       update(eventTemplates).replace(template);
@@ -164,6 +260,26 @@ class AppDatabase extends _$AppDatabase {
     if (active != null) {
       await updateRecord(active.copyWith(endTime: Value(DateTime.now())));
     }
+  }
+
+  // ========== 应用设置操作 ==========
+
+  Future<String?> getSetting(String key) async {
+    final result = await (select(appSettings)..where((t) => t.key.equals(key)))
+        .getSingleOrNull();
+    return result?.value;
+  }
+
+  Future<void> setSetting(String key, String value) async {
+    await into(appSettings).insertOnConflictUpdate(
+      AppSettingsCompanion.insert(key: key, value: value),
+    );
+  }
+
+  Stream<String?> watchSetting(String key) {
+    return (select(appSettings)..where((t) => t.key.equals(key)))
+        .watchSingleOrNull()
+        .map((s) => s?.value);
   }
 }
 

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/pressable.dart';
 import '../data/category_provider.dart';
-import 'category_edit_dialog.dart';
+import 'category_edit_sheet.dart';
 
 class CategoryListScreen extends ConsumerWidget {
   const CategoryListScreen({super.key});
@@ -9,21 +11,37 @@ class CategoryListScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final categoriesAsync = ref.watch(categoriesProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('分类管理'),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        elevation: 0,
       ),
       body: categoriesAsync.when(
         data: (categories) {
           if (categories.isEmpty) {
-            return const Center(child: Text('暂无分类，点击右下角添加'));
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.folder_outlined, size: 64, color: isDark ? Colors.grey.shade600 : Colors.grey.shade400),
+                  const SizedBox(height: 16),
+                  Text('暂无分类', style: TextStyle(fontSize: 16, color: isDark ? Colors.grey.shade400 : Colors.grey.shade600)),
+                  const SizedBox(height: 8),
+                  Text('点击右下角添加分类', style: TextStyle(fontSize: 14, color: isDark ? Colors.grey.shade500 : Colors.grey.shade500)),
+                ],
+              ),
+            );
           }
           return ListView.builder(
+            padding: const EdgeInsets.all(16),
             itemCount: categories.length,
             itemBuilder: (context, index) {
               final category = categories[index];
-              return _CategoryTile(category: category);
+              return _CategoryCard(category: category, isDark: isDark);
             },
           );
         },
@@ -31,76 +49,146 @@ class CategoryListScreen extends ConsumerWidget {
         error: (e, _) => Center(child: Text('加载失败: $e')),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddDialog(context),
-        child: const Icon(Icons.add),
+        onPressed: () => showCategoryEditSheet(context),
+        backgroundColor: AppColors.primary,
+        child: const Icon(Icons.add, color: Colors.white),
       ),
-    );
-  }
-
-  void _showAddDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => const CategoryEditDialog(),
     );
   }
 }
 
-class _CategoryTile extends ConsumerWidget {
+class _CategoryCard extends ConsumerStatefulWidget {
   final dynamic category;
+  final bool isDark;
 
-  const _CategoryTile({required this.category});
+  const _CategoryCard({required this.category, required this.isDark});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final color = _parseColor(category.color);
+  ConsumerState<_CategoryCard> createState() => _CategoryCardState();
+}
 
-    return ListTile(
-      leading: CircleAvatar(
-        backgroundColor: color,
-        child: category.icon != null
-            ? Icon(_parseIcon(category.icon), color: Colors.white)
-            : Text(
-                category.name.substring(0, 1),
-                style: const TextStyle(color: Colors.white),
-              ),
-      ),
-      title: Text(category.name),
-      trailing: PopupMenuButton(
-        itemBuilder: (context) => [
-          const PopupMenuItem(value: 'edit', child: Text('编辑')),
-          const PopupMenuItem(value: 'delete', child: Text('删除')),
+class _CategoryCardState extends ConsumerState<_CategoryCard> {
+  double _dragExtent = 0;
+  static const double _actionWidth = 80;
+
+  void _handleDragUpdate(DragUpdateDetails details) {
+    setState(() {
+      _dragExtent += details.delta.dx;
+      _dragExtent = _dragExtent.clamp(-_actionWidth, 0.0);
+    });
+  }
+
+  void _handleDragEnd(DragEndDetails details) {
+    if (_dragExtent < -_actionWidth / 2) {
+      setState(() => _dragExtent = -_actionWidth);
+    } else {
+      setState(() => _dragExtent = 0);
+    }
+  }
+
+  void _resetPosition() {
+    setState(() => _dragExtent = 0);
+  }
+
+  void _handleDelete() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('删除分类'),
+        content: Text('确定要删除「${widget.category.name}」吗？'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              ref.read(categoryServiceProvider).deleteCategory(widget.category.id);
+            },
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('删除'),
+          ),
         ],
-        onSelected: (value) {
-          if (value == 'edit') {
-            showDialog(
-              context: context,
-              builder: (context) => CategoryEditDialog(category: category),
-            );
-          } else if (value == 'delete') {
-            _confirmDelete(context, ref);
-          }
-        },
       ),
     );
   }
 
-  void _confirmDelete(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('确认删除'),
-        content: Text('确定要删除分类"${category.name}"吗？'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('取消'),
-          ),
-          TextButton(
-            onPressed: () {
-              ref.read(categoryServiceProvider).deleteCategory(category.id);
-              Navigator.pop(context);
-            },
-            child: const Text('删除'),
+  @override
+  Widget build(BuildContext context) {
+    final color = _parseColor(widget.category.color);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      height: 56,
+      child: Stack(
+        children: [
+          // 右侧删除按钮
+          if (_dragExtent < 0)
+            Positioned(
+              right: 0,
+              top: 0,
+              bottom: 0,
+              width: _actionWidth,
+              child: GestureDetector(
+                onTap: _handleDelete,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF43F5E),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  alignment: Alignment.center,
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.delete_outline, color: Colors.white, size: 20),
+                      SizedBox(width: 4),
+                      Text('删除', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          // 前景卡片
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 150),
+            curve: Curves.easeOutCubic,
+            left: _dragExtent,
+            right: -_dragExtent,
+            top: 0,
+            bottom: 0,
+            child: GestureDetector(
+              onHorizontalDragUpdate: _handleDragUpdate,
+              onHorizontalDragEnd: _handleDragEnd,
+              onTap: () {
+                if (_dragExtent != 0) {
+                  _resetPosition();
+                } else {
+                  showCategoryEditSheet(context, category: widget.category);
+                }
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color: widget.isDark ? const Color(0xFF1F2937) : Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 16,
+                      height: 16,
+                      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        widget.category.name,
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: widget.isDark ? Colors.white : null),
+                      ),
+                    ),
+                    Icon(Icons.chevron_right, color: widget.isDark ? Colors.grey.shade500 : Colors.grey.shade400),
+                  ],
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -113,18 +201,5 @@ class _CategoryTile extends ConsumerWidget {
     } catch (_) {
       return Colors.grey;
     }
-  }
-
-  IconData _parseIcon(String? iconName) {
-    // 简单的图标映射
-    const iconMap = {
-      'work': Icons.work,
-      'study': Icons.school,
-      'exercise': Icons.fitness_center,
-      'sleep': Icons.bedtime,
-      'eat': Icons.restaurant,
-      'entertainment': Icons.sports_esports,
-    };
-    return iconMap[iconName] ?? Icons.category;
   }
 }

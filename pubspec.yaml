@@ -47,13 +47,18 @@ dependencies:
   go_router: ^15.1.2
   
   # 图表
-  fl_chart: ^1.0.0
+  fl_chart: ^1.1.1
   
   # 工具
   intl: ^0.20.2
   uuid: ^4.5.1
   flutter_slidable: ^4.0.3
   google_fonts: ^6.2.1
+  image_picker: ^1.1.2
+  flutter_svg: ^2.0.10
+  shared_preferences: ^2.2.2
+  file_picker: ^8.0.0
+  share_plus: ^10.0.0
 
 dev_dependencies:
   flutter_test:
@@ -76,6 +81,17 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  assets:
+    - assets/icons/work/
+    - assets/icons/study/
+    - assets/icons/eat/
+    - assets/icons/sleep/
+    - assets/icons/exercise/
+    - assets/icons/entertainment/
+    - assets/icons/transportation/
+    - assets/icons/communication/
+    - assets/icons/shopingIcon/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

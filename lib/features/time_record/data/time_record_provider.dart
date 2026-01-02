@@ -34,6 +34,8 @@ class TimeRecordService {
     required String name,
     int? categoryId,
     String? tags,
+    String? icon,
+    String source = 'timerCard',  // 来源: timerCard 或 quickAccess
   }) async {
     // 先停止之前的记录
     await _db.stopActiveRecord();
@@ -43,6 +45,8 @@ class TimeRecordService {
       startTime: DateTime.now(),
       categoryId: Value(categoryId),
       tags: Value(tags),
+      icon: Value(icon),
+      source: Value(source),
     ));
   }
 
